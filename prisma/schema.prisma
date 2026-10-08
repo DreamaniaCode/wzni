@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client"
+  output = "../src/generated/prisma"
+}
+datasource db {
+  provider = "postgresql"
+}
+model Product {
+  sku String @id
+  name String
+  image_path String
+  price_mad Int @default(120)
+  description_fr String
+  description_ar String
+  color_hex String
+  color_fr String
+  color_ar String
+  active Boolean @default(true)
+  created_at DateTime @default(now()) @db.Timestamptz
+  orders Order[]
+  @@map("products")
+}
+model Order {
+  id String @id @default(uuid()) @db.Uuid
+  public_reference String @unique
+  idempotency_key String @unique @db.Uuid
+  customer_name String
+  customer_phone String
+  district String
+  delivery_address String
+  delivery_notes String @default("")
+  product_sku String
+  product Product @relation(fields:[product_sku],references:[sku])
+  quantity Int
+  unit_price_mad Int
+  delivery_fee_mad Int @default(0)
+  total_mad Int
+  payment_method String
+  status String @default("new")
+  locale String
+  utm_source String?
+  utm_medium String?
+  utm_campaign String?
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @updatedAt @db.Timestamptz
+  @@index([status,created_at])
+  @@index([product_sku])
+  @@map("orders")
+}
+model StoreSettings {
+  id Int @id @default(1)
+  whatsapp_number String @default("212783009072")
+  cod_enabled Boolean @default(false)
+  chatbot_enabled Boolean @default(true)
+  ai_chat_enabled Boolean @default(false)
+  primary_color String @default("#101828")
+  accent_color String @default("#16A34A")
+  facebook_url String @default("")
+  instagram_url String @default("")
+  tiktok_url String @default("")
+  @@map("store_settings")
+}
+model ContentBlock {
+  key String @id
+  text_fr String
+  text_ar String
+  @@map("content_blocks")
+}
+model FaqEntry {
+  id Int @id @default(autoincrement())
+  question_fr String
+  answer_fr String
+  question_ar String
+  answer_ar String
+  active Boolean @default(true)
+  @@map("faq_entries")
+}
+model Review {
+  id String @id @default(uuid()) @db.Uuid
+  customer_name String
+  locale String
+  rating Int
+  text String
+  status String @default("pending")
+  created_at DateTime @default(now()) @db.Timestamptz
+  @@index([status,created_at])
+  @@map("reviews")
+}
+model RateLimit {
+  bucket String @id
+  hits Int
+  expires_at DateTime @db.Timestamptz
+  @@map("rate_limits")
+}
+model AdminUser {
+  id String @id @default(uuid()) @db.Uuid
+  email String @unique
+  password_hash String
+  active Boolean @default(true)
+  sessions AdminSession[]
+  @@map("admin_users")
+}
+model AdminSession {
+  token_hash String @id
+  user_id String @db.Uuid
+  user AdminUser @relation(fields:[user_id],references:[id],onDelete:Cascade)
+  expires_at DateTime @db.Timestamptz
+  @@index([expires_at])
+  @@map("admin_sessions")
+}

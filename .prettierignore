@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+.remote-review
+src/generated
+public
+data
+test-results
+artifacts

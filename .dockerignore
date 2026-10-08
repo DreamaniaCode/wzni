@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.remote-review
+.env*
+!.env.example
+data
+test-results
+playwright-report
+artifacts
+supabase
+src/generated
