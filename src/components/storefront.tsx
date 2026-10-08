@@ -255,8 +255,10 @@ export default function Storefront({
           <Link
             className="language"
             href={ar ? "/fr" : "/ar"}
-            onClick={() => {
+            onClick={(event) => {
+              event.preventDefault();
               document.cookie = `wzni_locale=${ar ? "fr" : "ar"};path=/;max-age=31536000;SameSite=Lax`;
+              window.location.assign(ar ? "/fr" : "/ar");
             }}
           >
             {ar ? "FR" : "العربية"}

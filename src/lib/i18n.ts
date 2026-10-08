@@ -197,7 +197,7 @@ export function faqs(locale: Locale) {
         ],
         [
           "La livraison à Marrakech est-elle incluse ?",
-          "Oui, la livraison dans la ville de Marrakech est incluse dans le prix de 120 DH par unité.",
+          "Oui, la livraison dans la ville de Marrakech est incluse dans le prix affiché de chaque modèle.",
         ],
         [
           "Comment commander ?",
@@ -227,7 +227,7 @@ export function faqs(locale: Locale) {
         ],
         [
           "واش التوصيل مجاني فمراكش؟",
-          "نعم، التوصيل داخل مدينة مراكش داخل فثمن 120 درهم للوحدة.",
+          "نعم، التوصيل داخل مدينة مراكش داخل فالثمن المعروض ديال كل موديل.",
         ],
         [
           "كيفاش نطلب؟",
