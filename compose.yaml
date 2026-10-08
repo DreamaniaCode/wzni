@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wzni
+      POSTGRES_DB: wzni
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a strong database password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U wzni -d wzni"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  migrate:
+    build:
+      context: .
+      target: migration
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://wzni:${POSTGRES_PASSWORD}@postgres:5432/wzni
+    depends_on:
+      postgres:
+        condition: service_healthy
+  app:
+    build:
+      context: .
+      target: runtime
+      args:
+        NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-}
+        NEXT_PUBLIC_META_PIXEL_ID: ${NEXT_PUBLIC_META_PIXEL_ID:-}
+    restart: unless-stopped
+    expose: ["3000"]
+    environment:
+      DATABASE_URL: postgresql://wzni:${POSTGRES_PASSWORD}@postgres:5432/wzni
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?Set the public HTTPS domain}
+      AI_API_URL: ${AI_API_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+    volumes:
+      - product-uploads:/app/data/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          'fetch("http://127.0.0.1:3000/api/health").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))',
+        ]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+volumes:
+  postgres-data:
+  product-uploads:

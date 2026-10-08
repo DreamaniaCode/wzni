@@ -1,0 +1,35 @@
+[
+  {
+    "sku": "CB301-SILVER",
+    "dimensions": [
+      720,
+      467
+    ],
+    "technique": "Hand-traced polygon mask outside physical product; white background; crop; no regenerated pixels",
+    "review": "Visually inspected: model mapping, edges, patterns, manufacturer markings and removal of external price labels verified",
+    "original": "public/products/originals/prima-silver.jpg",
+    "output": "public/products/optimized/prima-silver.webp"
+  },
+  {
+    "sku": "CB301-LED",
+    "dimensions": [
+      720,
+      447
+    ],
+    "technique": "Hand-traced polygon mask outside physical product; white background; crop; no regenerated pixels",
+    "review": "Visually inspected: model mapping, edges, patterns, manufacturer markings and removal of external price labels verified",
+    "original": "public/products/originals/prima-led.jpg",
+    "output": "public/products/optimized/prima-led.webp"
+  },
+  {
+    "sku": "CB301-BLACK",
+    "dimensions": [
+      720,
+      505
+    ],
+    "technique": "Hand-traced polygon mask outside physical product; white background; crop; no regenerated pixels",
+    "review": "Visually inspected: model mapping, edges, patterns, manufacturer markings and removal of external price labels verified",
+    "original": "public/products/originals/prima-black.jpg",
+    "output": "public/products/optimized/prima-black.webp"
+  }
+]

@@ -1,0 +1,116 @@
+import type { Metadata } from "next";
+import Storefront from "@/components/storefront";
+import { type Locale } from "@/lib/catalog";
+import { publicData } from "@/lib/server";
+import { contentText } from "@/lib/store-copy";
+export const dynamic = "force-dynamic";
+const siteUrl = () =>
+  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const { catalog, content } = await publicData();
+  const active = catalog.filter((p) => p.active);
+  const minimum = active.length
+    ? Math.min(...active.map((p) => p.price))
+    : null;
+  const title =
+    contentText("seo_meta_title", locale, content) +
+    (minimum ? " — " + minimum + " DH" : "");
+  const description = contentText("seo_meta_description", locale, content);
+  return {
+    metadataBase: new URL(siteUrl()),
+    title,
+    description,
+    keywords:
+      locale === "fr"
+        ? [
+            "balance électronique Marrakech",
+            "pèse-personne Marrakech",
+            "balance PRIMA Marrakech",
+          ]
+        : ["ميزان إلكتروني مراكش", "ميزان الوزن مراكش", "ميزان PRIMA"],
+    alternates: {
+      canonical: "/" + locale,
+      languages: { fr: "/fr", ar: "/ar" },
+    },
+    openGraph: {
+      title,
+      description,
+      url: "/" + locale,
+      locale: locale === "ar" ? "ar_MA" : "fr_MA",
+      images: [catalog[2].image],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [catalog[2].image],
+    },
+  };
+}
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}) {
+  const { locale } = await params;
+  const { catalog, store, content, faq, reviews } = await publicData();
+  const site = siteUrl();
+  const structured = catalog
+    .filter((p) => p.active)
+    .map((p) => ({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: p.name,
+      sku: p.sku,
+      image: site + p.image,
+      description: locale === "ar" ? p.descriptionAr : p.descriptionFr,
+      color: locale === "ar" ? p.colorAr : p.colorFr,
+      brand: { "@type": "Brand", name: "PRIMA" },
+      offers: {
+        "@type": "Offer",
+        price: String(p.price),
+        priceCurrency: "MAD",
+        url: site + "/" + locale,
+        shippingDetails: {
+          "@type": "OfferShippingDetails",
+          shippingRate: {
+            "@type": "MonetaryAmount",
+            value: 0,
+            currency: "MAD",
+          },
+          shippingDestination: {
+            "@type": "DefinedRegion",
+            addressCountry: "MA",
+            addressRegion: "Marrakech",
+          },
+        },
+      },
+    }));
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structured).replace(/</g, "\u003c"),
+        }}
+      />
+      <Storefront
+        locale={locale}
+        catalog={catalog}
+        store={store || {}}
+        content={content}
+        reviews={reviews}
+        faqRows={faq.map((f) =>
+          locale === "ar"
+            ? [f.question_ar, f.answer_ar]
+            : [f.question_fr, f.answer_fr],
+        )}
+      />
+    </>
+  );
+}

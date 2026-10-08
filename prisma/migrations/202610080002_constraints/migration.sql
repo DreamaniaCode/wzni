@@ -1,0 +1,12 @@
+ALTER TABLE products ADD CONSTRAINT product_price_valid CHECK (price_mad BETWEEN 1 AND 100000);
+ALTER TABLE products ADD CONSTRAINT product_known_sku CHECK (sku IN ('CB301-SILVER','CB301-LED','CB301-BLACK'));
+ALTER TABLE orders ADD CONSTRAINT order_quantity_valid CHECK (quantity BETWEEN 1 AND 20);
+ALTER TABLE orders ADD CONSTRAINT order_total_valid CHECK (unit_price_mad BETWEEN 1 AND 100000 AND delivery_fee_mad=0 AND total_mad=quantity*unit_price_mad);
+ALTER TABLE orders ADD CONSTRAINT order_status_valid CHECK (status IN ('new','confirmed','in_delivery','delivered','cancelled'));
+ALTER TABLE orders ADD CONSTRAINT order_phone_valid CHECK (customer_phone ~ '^\+212[67][0-9]{8}$');
+ALTER TABLE orders ADD CONSTRAINT order_locale_valid CHECK (locale IN ('fr','ar'));
+ALTER TABLE orders ADD CONSTRAINT order_payment_valid CHECK (payment_method IN ('cash_on_delivery','to_confirm'));
+ALTER TABLE reviews ADD CONSTRAINT review_rating_valid CHECK (rating BETWEEN 1 AND 5);
+ALTER TABLE reviews ADD CONSTRAINT review_status_valid CHECK (status IN ('pending','approved','rejected'));
+ALTER TABLE reviews ADD CONSTRAINT review_locale_valid CHECK (locale IN ('fr','ar'));
+ALTER TABLE store_settings ADD CONSTRAINT single_settings CHECK (id=1);
