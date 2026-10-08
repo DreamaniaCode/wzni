@@ -8,3 +8,4 @@ test-results/
 src/generated/
 data/
 .remote-review/
+next-env.d.ts
