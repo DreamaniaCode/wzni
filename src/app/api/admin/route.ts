@@ -42,6 +42,10 @@ const mutation = z.discriminatedUnion("type", [
     facebook_url: social("facebook.com"),
     instagram_url: social("instagram.com"),
     tiktok_url: social("tiktok.com"),
+    meta_pixel_id: z
+      .string()
+      .regex(/^(\d{5,30})?$/)
+      .default(""),
   }),
   z.object({
     type: z.literal("product"),

@@ -4,6 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { database } from "./prisma";
 import { products, type Product } from "./catalog";
 import { defaultContent } from "./default-content";
+import { siteUrl } from "./site-url";
 export { database } from "./prisma";
 export const sessionCookie = "wzni_admin_session";
 export const tokenHash = (token: string) =>
@@ -50,11 +51,8 @@ export async function endSession() {
 }
 export function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  const trusted = process.env.NEXT_PUBLIC_SITE_URL;
-  return (
-    origin === new URL(request.url).origin ||
-    (!!trusted && origin === new URL(trusted).origin)
-  );
+  const trusted = siteUrl();
+  return origin === new URL(request.url).origin || origin === trusted;
 }
 export async function rateLimit(
   request: Request,

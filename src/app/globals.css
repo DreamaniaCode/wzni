@@ -1,4 +1,37 @@
 @import "tailwindcss";
+.blog-page {
+  max-width: 1280px;
+  margin: auto;
+}
+.blog-page header {
+  padding-bottom: 0;
+}
+.article-body {
+  max-width: 800px;
+  margin: auto;
+}
+.article-body h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.2;
+  margin: 24px 0;
+}
+.article-body p {
+  line-height: 1.9;
+  margin: 24px 0;
+}
+.article-intro {
+  font-size: 1.2rem;
+  color: #526070;
+}
+.blog-section .usage-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 28px 0;
+}
+@media (max-width: 700px) {
+  .blog-section .usage-grid {
+    grid-template-columns: 1fr;
+  }
+}
 :root {
   --ink: #101828;
   --green: #16a34a;

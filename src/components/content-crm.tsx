@@ -25,6 +25,7 @@ export type ManagedSettings = {
   facebook_url: string;
   instagram_url: string;
   tiktok_url: string;
+  meta_pixel_id?: string;
 };
 export type ManagedReview = {
   id: string;
@@ -294,7 +295,28 @@ export default function ContentCrm({
               </label>
             ),
           )}
-          <p>Un champ vide affiche « Bientôt » sans lien fictif.</p>
+          <p>
+            Facebook et Instagram utilisent @wznimaroc par défaut. TikTok reste
+            « Bientôt » tant que son URL est vide.
+          </p>
+          <label>
+            Meta / Facebook Pixel ID
+            <input
+              inputMode="numeric"
+              pattern="[0-9]{5,30}"
+              value={theme.meta_pixel_id || ""}
+              placeholder="Identifiant numérique du pixel"
+              onChange={(e) =>
+                setTheme({ ...theme, meta_pixel_id: e.target.value })
+              }
+            />
+          </label>
+          <p>
+            Copiez uniquement l’identifiant depuis Meta Events Manager. Aucun
+            code ni token requis. Enregistrez, puis ouvrez la boutique et
+            acceptez les statistiques pour tester PageView. Lead est envoyé
+            après une commande enregistrée.
+          </p>
           <button disabled={busy}>Enregistrer la marque</button>
         </form>
       </section>

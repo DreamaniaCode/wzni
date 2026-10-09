@@ -24,8 +24,12 @@ test("identical bilingual logo, real color choices, guides and social placeholde
   await expect(page.locator(".seo-section")).toContainText(
     "pèse-personne à Marrakech",
   );
-  await expect(page.locator(".social-placeholder")).toHaveCount(3);
-  await expect(page.locator(".social-links a")).toHaveCount(0);
+  await expect(page.locator(".social-placeholder")).toHaveCount(1);
+  await expect(page.locator(".social-links a")).toHaveCount(2);
+  await expect(page.locator(".social-links a").first()).toHaveAttribute(
+    "href",
+    "https://www.facebook.com/wznimaroc",
+  );
   await page
     .locator(".color-selector")
     .getByRole("button", { name: /PRIMA BLACK/ })
@@ -100,7 +104,7 @@ test("CRM controls submit bilingual text, price and social link changes", async 
       await route.fulfill({ json: { ok: true } });
     } else await route.fulfill({ json: fixture });
   });
-  await page.goto("/admin");
+  await page.goto("/gestion-7c9e4b2a");
   await page
     .getByRole("button", { name: "Ouvrir ma session existante" })
     .click();

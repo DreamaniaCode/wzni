@@ -23,7 +23,11 @@ for (const p of products)
 await db.storeSettings.upsert({
   where: { id: 1 },
   update: {},
-  create: { id: 1 },
+  create: {
+    id: 1,
+    facebook_url: "https://www.facebook.com/wznimaroc",
+    instagram_url: "https://www.instagram.com/wznimaroc/",
+  },
 });
 for (const [key, value] of Object.entries(defaultContent))
   await db.contentBlock.upsert({

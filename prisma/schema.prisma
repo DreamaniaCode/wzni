@@ -58,6 +58,7 @@ model StoreSettings {
   facebook_url String @default("")
   instagram_url String @default("")
   tiktok_url String @default("")
+  meta_pixel_id String @default("")
   @@map("store_settings")
 }
 model ContentBlock {

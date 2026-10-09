@@ -17,6 +17,10 @@ The five remaining full-audit findings are development-only lint dependencies th
 
 ## Scope of verification
 
+Latest update: 35 unit/API tests and seven Chromium browser tests passed, along with TypeScript, ESLint and Prisma schema validation. Added regression coverage for the exact invalid Coolify URL placeholder, safe URL normalization, CRM-configured Pixel initialization/consent and MAD events, bilingual blog pages, social preview metadata, old `/admin` returning 404 and CRM exclusion from the sitemap. The article layout was visually inspected.
+
+A production build was run with `NEXT_PUBLIC_SITE_URL=Set the public HTTPS domain` and an empty `SITE_URL`. Local production HTTP checks returned 200 without rendering-error digests for FR/AR storefronts, FR/AR articles and sitemap; the canonical URL used the correct production fallback. The public deployed response exposed the invalid site URL before this fix. The server itself has not been redeployed from this workspace; live migration and Pixel Events Manager verification remain deployment checks.
+
 Order/CRM/review unit tests mock Prisma responses. CRM browser fixtures are synthetic and do not represent real customers or approved testimonials. Photo tests process a supplied product image and write/serve/delete their own generated test upload.
 
 Local Docker is installed but its Linux daemon was stopped. No full Docker image or Compose/PostgreSQL stack was started. No Coolify credentials or live database connection were supplied. Actual migration application, PostgreSQL persistence, authenticated admin sessions, server deployment, volume permissions and restoration remain external staging checks.

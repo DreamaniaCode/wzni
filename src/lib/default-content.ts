@@ -1,4 +1,6 @@
+import { blogContent } from "./blog";
 export const defaultContent = {
+  ...blogContent,
   hero_eyebrow: {
     fr: "UN PEU DE DESIGN. BEAUCOUP DE VOUS.",
     ar: "تصميم أنيق. على ذوقك.",

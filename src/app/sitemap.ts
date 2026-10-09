@@ -1,11 +1,19 @@
 import type { MetadataRoute } from "next";
-export const dynamic='force-dynamic';
+import { siteUrl } from "@/lib/site-url";
+import { articles } from "@/lib/blog";
+export const dynamic = "force-dynamic";
 export default function sitemap(): MetadataRoute.Sitemap {
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const site = siteUrl();
   return ["fr", "ar"].flatMap((locale) =>
-    ["", "/confidentialite", "/conditions", "/livraison"].map((path) => ({
+    [
+      "",
+      "/confidentialite",
+      "/conditions",
+      "/livraison",
+      "/blog",
+      ...articles.map((a) => "/blog/" + a.slug),
+    ].map((path) => ({
       url: `${site}/${locale}${path}`,
-      lastModified: new Date(),
     })),
   );
 }

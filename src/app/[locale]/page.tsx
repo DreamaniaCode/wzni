@@ -3,9 +3,8 @@ import Storefront from "@/components/storefront";
 import { type Locale } from "@/lib/catalog";
 import { publicData } from "@/lib/server";
 import { contentText } from "@/lib/store-copy";
+import { siteUrl } from "@/lib/site-url";
 export const dynamic = "force-dynamic";
-const siteUrl = () =>
-  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 export async function generateMetadata({
   params,
 }: {
@@ -42,13 +41,13 @@ export async function generateMetadata({
       description,
       url: "/" + locale,
       locale: locale === "ar" ? "ar_MA" : "fr_MA",
-      images: [catalog[2].image],
+      images: ["/social/wzni-maroc.jpg"],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [catalog[2].image],
+      images: ["/social/wzni-maroc.jpg"],
     },
   };
 }
@@ -96,7 +95,20 @@ export default async function Page({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(structured).replace(/</g, "\u003c"),
+          __html: JSON.stringify([
+            ...structured,
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "WZNI | وزني",
+              url: site,
+              logo: site + "/social/wzni-maroc.jpg",
+              sameAs: [
+                store?.facebook_url || "https://www.facebook.com/wznimaroc",
+                store?.instagram_url || "https://www.instagram.com/wznimaroc/",
+              ],
+            },
+          ]).replace(/</g, "\\u003c"),
         }}
       />
       <Storefront

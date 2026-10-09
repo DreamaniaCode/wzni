@@ -35,8 +35,16 @@ export function SocialLinks({
 }) {
   const ar = locale === "ar";
   const socials = [
-    { label: "Facebook", url: store.facebook_url, Icon: Facebook },
-    { label: "Instagram", url: store.instagram_url, Icon: Instagram },
+    {
+      label: "Facebook · @wznimaroc",
+      url: store.facebook_url || "https://www.facebook.com/wznimaroc",
+      Icon: Facebook,
+    },
+    {
+      label: "Instagram · @wznimaroc",
+      url: store.instagram_url || "https://www.instagram.com/wznimaroc/",
+      Icon: Instagram,
+    },
     { label: "TikTok", url: store.tiktok_url, Icon: null },
   ];
   return (

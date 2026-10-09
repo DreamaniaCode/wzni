@@ -35,12 +35,13 @@ import {
 } from "@/lib/catalog";
 import { orderSchema, type OrderInput } from "@/lib/validation";
 import { Button } from "./ui/button";
-import { track, consent } from "./tracking";
+import { track, consent, configureTracking } from "./tracking";
 import BrandLogo from "./brand-logo";
 import CustomerReviews, { type PublicReview } from "./customer-reviews";
 import StoreExtras, { SocialLinks } from "./store-extras";
 import { type ContentRow } from "@/lib/default-content";
 import { storeCopy, liveFaqs } from "@/lib/store-copy";
+import BlogLinks from "./blog-links";
 type StoreSettings = {
   whatsapp_number?: string;
   cod_enabled?: boolean;
@@ -51,6 +52,7 @@ type StoreSettings = {
   facebook_url?: string;
   instagram_url?: string;
   tiktok_url?: string;
+  meta_pixel_id?: string;
 };
 export default function Storefront({
   locale,
@@ -104,8 +106,9 @@ export default function Storefront({
   const product = products[selected],
     number = store.whatsapp_number || "212783009072";
   useEffect(() => {
+    configureTracking(store.meta_pixel_id);
     if (localStorage.getItem("wzni_consent") === "yes") consent(true);
-  }, []);
+  }, [store.meta_pixel_id]);
   const {
     register,
     handleSubmit,
@@ -774,6 +777,7 @@ export default function Storefront({
           )}
         </section>
         <StoreExtras locale={locale} content={content} />
+        <BlogLinks locale={locale} />
         <CustomerReviews locale={locale} reviews={reviews} />
         <section id="faq" className="section faq">
           <div>

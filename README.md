@@ -19,7 +19,9 @@ The admin command requires `ADMIN_EMAIL` and a unique `ADMIN_PASSWORD` of at lea
 
 Without a database, the storefront displays catalog defaults but checkout/review submission fails honestly. It never fabricates an order reference or a saved review.
 
-## CRM: /admin
+## CRM: /gestion-7c9e4b2a
+
+Bookmark this address privately. `/admin` returns 404. The CRM has no public navigation link, no sitemap entry and noindex metadata. Its uncommon URL reduces discovery; database authentication remains required.
 
 - Orders, status changes, search/filter, customer WhatsApp contact and CSV export.
 - Dashboard totals aggregate across the database. The table/export shows the latest 5,000 orders; older records require database reporting.
@@ -38,7 +40,7 @@ The fixed logo is `src/components/brand-logo.tsx`, with identical Latin/Arabic a
 Repository: [DreamaniaCode/wzni](https://github.com/DreamaniaCode/wzni).
 
 1. Create a Git-based application in Coolify using the Docker Compose build pack. Select the implementation branch and `compose.yaml`.
-2. Set `POSTGRES_PASSWORD` to a strong random hexadecimal/alphanumeric value and `NEXT_PUBLIC_SITE_URL` to the final HTTPS domain. Keep PostgreSQL off public ports.
+2. Set `POSTGRES_PASSWORD` to a strong random hexadecimal/alphanumeric value. Set `SITE_URL` and `NEXT_PUBLIC_SITE_URL` to `https://wzni.myskillscloud.com`. Enter the actual URL, never the Coolify placeholder “Set the public HTTPS domain”. Keep PostgreSQL off public ports. Runtime `SITE_URL` takes priority; invalid values fall back safely rather than crashing metadata.
 3. Assign the domain to the `app` service, port 3000. Deploy. The one-off `migrate` service applies migrations/seeds without overwriting CRM edits; the app waits for it to succeed.
 4. Create the first administrator from the repository checkout on the deployment server. Export `ADMIN_EMAIL` and temporarily set `ADMIN_PASSWORD` without putting it in command history, then run:
 
@@ -48,7 +50,7 @@ docker compose run --rm -e ADMIN_EMAIL -e ADMIN_PASSWORD migrate npm run db:admi
 
 Remove `ADMIN_PASSWORD` afterward. This runs in the migration image; the slim app image omits setup tooling.
 
-5. Sign in at `/admin`, review images/text/prices, add real social links and activate COD only if offered.
+5. Sign in at `/gestion-7c9e4b2a`, review images/text/prices and activate COD only if offered. Facebook and Instagram use @wznimaroc. TikTok remains a placeholder.
 6. On staging, verify a real stored order, duplicate retry, login/security, review approval and photo persistence across redeploys.
 7. Back up both named volumes: `postgres-data` and `product-uploads`. Restoring the database alone does not restore uploaded photos. Keep the app behind Coolify HTTPS; configure proxy upload-size limits and overwrite the client-IP header.
 
@@ -60,11 +62,15 @@ References: [Prisma v7 Docker](https://www.prisma.io/docs/guides/v7/deployment/d
 
 ## Environment and optional integrations
 
-Required: `DATABASE_URL`; production `NEXT_PUBLIC_SITE_URL`. Compose also requires `POSTGRES_PASSWORD`. `ADMIN_EMAIL` / `ADMIN_PASSWORD` are one-off setup inputs.
+Required: `DATABASE_URL`; production `SITE_URL` / `NEXT_PUBLIC_SITE_URL`. Compose also requires `POSTGRES_PASSWORD`. `ADMIN_EMAIL` / `ADMIN_PASSWORD` are one-off setup inputs.
 
 Optional server-only `AI_API_URL`, `AI_API_KEY`, `AI_MODEL`: enable the classifier in CRM after configuration. It returns an intent only; responses use the live store knowledge base. Rate limits and input/output limits apply; failures fall back to guided mode.
 
-Optional `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_META_PIXEL_ID`: consent-gated analytics, supplied as Docker build arguments. No customer data is sent. Lead is recorded only after a successful order write. WhatsApp links open prefilled messages; nothing is sent automatically.
+For Facebook Pixel, copy the numeric ID from Meta Events Manager → your pixel/data source → Settings. Paste it in CRM → brand settings → Meta / Facebook Pixel ID and save. No rebuild is needed. Redeploy this update first so its migration adds the field. On the storefront, accept statistics consent and inspect PageView in Meta Test Events / Pixel Helper. InitiateCheckout and Lead include MAD value and product IDs; Lead fires only after the order is saved. No purchase event is emitted for an unconfirmed enquiry, and customer contact details are not sent. Refusing consent prevents loading the pixel.
+
+Optional `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_META_PIXEL_ID` remain Docker build-argument fallbacks. The CRM Pixel ID takes priority. WhatsApp links open prefilled messages; nothing is sent automatically.
+
+Three FR/AR guides live under `/{locale}/blog`; their paragraph text is editable in CRM content fields beginning with `blog`. They include canonical/hreflang metadata, BlogPosting structured data and sitemap entries. The supplied profile logo at `public/social/wzni-maroc.jpg` is used for social previews, while the main website logo stays unchanged. Testimonials come from approved submitted reviews; none are invented.
 
 ## Safeguards and legal copy
 
@@ -76,7 +82,8 @@ Orders are enquiries awaiting merchant confirmation; COD defaults off. Editable 
 
 - `/fr`, `/ar`: store, guidance, reviews and checkout
 - `/{locale}/confidentialite`, `/conditions`, `/livraison`: legal/delivery pages
-- `/admin`: orders and content CRM
+- `/gestion-7c9e4b2a`: orders and content CRM
+- `/fr/blog`, `/ar/blog`: bilingual journal and article pages
 - `/api/orders`, `/api/reviews`, `/api/chat`: customer actions
 - `/api/admin`, `/api/admin/auth`, `/api/admin/media`: protected admin actions
 - `/media/[filename]`, `/api/health`, `/sitemap.xml`, `/robots.txt`

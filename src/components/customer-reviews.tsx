@@ -57,7 +57,14 @@ export default function CustomerReviews({
           <div className="eyebrow">
             {ar ? "تجربتكم مع WZNI" : "VOTRE EXPÉRIENCE WZNI"}
           </div>
-          <h2>{ar ? "الرأي ديالك كيهمنا." : "Votre avis compte."}</h2>
+          <h2>
+            {ar ? "تجارب الزبناء مع وزني" : "Les témoignages de nos clients"}
+          </h2>
+          <p>
+            {ar
+              ? "شارك رأيك على التصميم، الاستعمال والتوصيل فمراكش باش تعاون الزبناء يختارو."
+              : "Design, utilisation et livraison à Marrakech : partagez votre expérience pour aider les prochains clients à choisir."}
+          </p>
         </div>
         <button className="button outline" onClick={() => setOpen(!open)}>
           <MessageSquareText size={16} />
