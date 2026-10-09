@@ -12,14 +12,8 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const { catalog, content } = await publicData();
-  const active = catalog.filter((p) => p.active);
-  const minimum = active.length
-    ? Math.min(...active.map((p) => p.price))
-    : null;
-  const title =
-    contentText("seo_meta_title", locale, content) +
-    (minimum ? " — " + minimum + " DH" : "");
+  const { content } = await publicData();
+  const title = contentText("seo_meta_title", locale, content);
   const description = contentText("seo_meta_description", locale, content);
   return {
     ...pageMetadata(locale, "", title, description),

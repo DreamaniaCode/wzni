@@ -3,6 +3,9 @@ import Image from "next/image";
 import { useState } from "react";
 import { ImagePlus, Save, Palette, FileText, Star } from "lucide-react";
 import { defaultContent, type ContentRow } from "@/lib/default-content";
+import { contentFields } from "@/lib/content-fields";
+import type { ContentKey } from "@/lib/default-content";
+import { articles } from "@/lib/blog";
 export type ManagedProduct = {
   sku: string;
   name: string;
@@ -184,15 +187,24 @@ function TextEditor({
   busy: boolean;
 }) {
   const [draft, setDraft] = useState(row);
+  const field = contentFields[row.key as ContentKey];
   return (
     <details className="crm-text">
-      <summary>{row.key.replaceAll("_", " ")}</summary>
+      <summary>
+        <strong>{field.label}</strong>
+        <span>
+          {draft.text_fr.length > 100
+            ? draft.text_fr.slice(0, 100) + "…"
+            : draft.text_fr}
+        </span>
+      </summary>
       <form
         onSubmit={(e) => {
           e.preventDefault();
           save({ type: "content", ...draft });
         }}
       >
+        <p className="crm-field-help">{field.hint}</p>
         {(["text_fr", "text_ar"] as const).map((key) => (
           <label key={key}>
             {key === "text_fr" ? "Français" : "العربية"}
@@ -204,6 +216,7 @@ function TextEditor({
               maxLength={4000}
               onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
             />
+            <small>{draft[key].length} caractères</small>
           </label>
         ))}
         <button disabled={busy}>Enregistrer les deux langues</button>
@@ -229,6 +242,9 @@ export default function ContentCrm({
   view?: string;
 }) {
   const [theme, setTheme] = useState(settings);
+  const [contentGroup, setContentGroup] = useState<"home" | "guides" | "seo">(
+    "home",
+  );
   const blocks = Object.entries(defaultContent).map(
     ([key, value]) =>
       content.find((row) => row.key === key) || {
@@ -329,21 +345,92 @@ export default function ContentCrm({
       <section id="crm-content" hidden={!!view && view !== "content"}>
         <h2>
           <FileText />
-          Textes bilingues et SEO
+          Textes du site et référencement
         </h2>
         <p>
-          Titres, descriptions, conseils d’utilisation et référencement. Les
-          montants sont calculés depuis les produits ; évitez les prix dans les
-          textes libres.
+          Choisissez une rubrique, puis ouvrez le texte à modifier. Chaque champ
+          indique où il apparaît sur le site. Enregistrer met à jour les
+          versions française et arabe. Les articles se trouvent dans la rubrique
+          Blog.
         </p>
-        {blocks.map((row) => (
-          <TextEditor
-            key={row.key + row.text_fr + row.text_ar}
-            row={row}
-            save={save}
-            busy={busy}
-          />
-        ))}
+        <div className="crm-content-groups" aria-label="Rubriques des textes">
+          {(
+            [
+              { id: "home", label: "Page d’accueil" },
+              { id: "guides", label: "Conseils d’utilisation" },
+              { id: "seo", label: "Référencement Google" },
+            ] as const
+          ).map((group) => (
+            <button
+              key={group.id}
+              aria-pressed={contentGroup === group.id}
+              onClick={() => setContentGroup(group.id)}
+            >
+              {group.label}
+            </button>
+          ))}
+        </div>
+        {contentGroup === "seo" && (
+          <div className="crm-seo-preview">
+            <small>Aperçu du résultat Google — français</small>
+            <span>wzni.store</span>
+            <h3>
+              {blocks.find((row) => row.key === "seo_meta_title")?.text_fr}
+            </h3>
+            <p>
+              {
+                blocks.find((row) => row.key === "seo_meta_description")
+                  ?.text_fr
+              }
+            </p>
+          </div>
+        )}
+        {blocks
+          .filter(
+            (row) =>
+              contentFields[row.key as ContentKey].group === contentGroup,
+          )
+          .sort(
+            (a, b) =>
+              Object.keys(contentFields).indexOf(a.key) -
+              Object.keys(contentFields).indexOf(b.key),
+          )
+          .map((row) => (
+            <TextEditor
+              key={row.key + row.text_fr + row.text_ar}
+              row={row}
+              save={save}
+              busy={busy}
+            />
+          ))}
+      </section>
+      <section id="crm-blogs" hidden={!!view && view !== "blogs"}>
+        <h2>Articles de blog</h2>
+        <p>
+          Vos articles sont séparés des textes de la boutique. Retrouvez chaque
+          guide par son titre et modifiez son contenu en français et en arabe.
+        </p>
+        {articles.map((article) => {
+          const row = blocks.find((block) => block.key === article.key)!;
+          return (
+            <div className="crm-blog-entry" key={article.slug}>
+              <a
+                className="text-link"
+                href={`/fr/blog/${article.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Voir l’article publié →
+              </a>
+              <TextEditor
+                key={row.key + row.text_fr + row.text_ar}
+                row={row}
+                save={save}
+                busy={busy}
+              />
+            </div>
+          );
+        })}
       </section>
       <section id="crm-reviews" hidden={!!view && view !== "reviews"}>
         <h2>

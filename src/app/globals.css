@@ -2096,3 +2096,77 @@ html[lang="ar"] body {
     padding: 10px 14px;
   }
 }
+.admin .crm-text {
+  border: 1px solid #dfe5e0;
+  border-radius: 12px;
+  background: #fafbf9;
+  margin: 12px 0;
+  padding: 0 16px;
+}
+.admin .crm-text summary {
+  padding: 16px 0;
+  cursor: pointer;
+}
+.admin .crm-text summary strong {
+  display: inline;
+  font-size: 16px;
+}
+.admin .crm-text summary span {
+  display: block;
+  margin-top: 8px;
+  color: #526070;
+  font-size: 13px;
+}
+.admin .crm-field-help {
+  line-height: 1.7;
+  color: #526070;
+  margin-bottom: 20px;
+}
+.admin .crm-text label small {
+  display: block;
+  color: #667085;
+  font-size: 12px;
+  margin-top: 6px;
+}
+.admin .crm-content-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0;
+}
+.admin .crm-content-groups button {
+  background: #f1f5f1;
+  color: #193626;
+  border: 1px solid #d9e3d9;
+}
+.admin .crm-content-groups button[aria-pressed="true"] {
+  background: #193626;
+  color: #fff;
+}
+.admin .crm-seo-preview {
+  border: 1px solid #dfe5e0;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  max-width: 720px;
+  background: #fff;
+}
+.admin .crm-seo-preview small,
+.admin .crm-seo-preview span {
+  display: block;
+  color: #526070;
+  margin-bottom: 8px;
+}
+.admin .crm-seo-preview h3 {
+  color: #183da8;
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+.admin .crm-seo-preview p {
+  color: #344054;
+  line-height: 1.6;
+}
+.admin .crm-blog-entry {
+  padding: 16px 0;
+  border-top: 1px solid #e1e6dc;
+}

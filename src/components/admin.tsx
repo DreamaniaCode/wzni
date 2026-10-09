@@ -56,6 +56,7 @@ const views = [
   { id: "orders", label: "Commandes" },
   { id: "products", label: "Produits" },
   { id: "content", label: "Textes et SEO" },
+  { id: "blogs", label: "Blog" },
   { id: "reviews", label: "Avis clients" },
   { id: "settings", label: "Paramètres" },
   { id: "faq", label: "FAQ" },

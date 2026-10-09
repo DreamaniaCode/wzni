@@ -145,9 +145,23 @@ test("CRM controls submit bilingual text, price and social link changes", async 
   await page
     .getByRole("button", { name: "Textes et SEO", exact: true })
     .click();
+  await expect(page.locator("#crm-content")).toContainText(
+    "Présentation de la boutique",
+  );
+  await page
+    .getByRole("button", { name: "Référencement Google", exact: true })
+    .click();
+  await expect(page.locator(".crm-seo-preview")).toContainText("wzni.store");
+  await expect(page.locator("#crm-content summary").first()).toContainText(
+    "Titre dans Google et les partages",
+  );
+  await page.screenshot({ path: "test-results/crm-seo.png", fullPage: true });
+  await page
+    .getByRole("button", { name: "Page d’accueil", exact: true })
+    .click();
   await page
     .locator("#crm-content summary")
-    .filter({ hasText: "hero headline" })
+    .filter({ hasText: "Titre principal — première ligne" })
     .first()
     .click();
   const textForm = page.locator(".crm-text[open] form").first();
@@ -163,6 +177,12 @@ test("CRM controls submit bilingual text, price and social link changes", async 
       ),
     )
     .toBe(true);
+  await page.getByRole("button", { name: "Blog", exact: true }).click();
+  await expect(page.locator("#crm-blogs")).toBeVisible();
+  await expect(page.locator("#crm-content")).toBeHidden();
+  await expect(page.locator("#crm-blogs")).toContainText(
+    "Choisir une balance électronique à Marrakech",
+  );
   await page.getByRole("button", { name: "Paramètres", exact: true }).click();
   await page
     .locator("#crm-brand")
