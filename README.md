@@ -64,6 +64,8 @@ References: [Prisma v7 Docker](https://www.prisma.io/docs/guides/v7/deployment/d
 
 ### Existing internal Coolify PostgreSQL
 
+Both Compose files explicitly attach `app` and `migrate` to the existing external network `coolify`, alongside their resource-specific default network. This allows the migration service to resolve and reach a standalone Coolify PostgreSQL container before the app starts. If the database uses a custom destination network, set `COOLIFY_NETWORK` to that existing network's name. The network must exist on the deployment server; Compose does not create or delete it. This fixes the deployment failure where migrations returned Prisma P1001 and the app remained stopped waiting for them.
+
 The default `compose.yaml` now also honors a configured `DATABASE_URL` for both the app and migrations instead of overriding it with the bundled database URL. When that variable is unset, the bundled database remains the fallback. Enable the predefined network connection when using the internal hostname. Use `compose.external.yaml` to avoid starting a bundled database entirely.
 
 Select `compose.external.yaml` instead of `compose.yaml` to use the existing PostgreSQL resource. Enable **Connect to Predefined Network** so its internal hostname resolves. Set `DATABASE_URL` to the supplied internal URL in Coolify's environment editor; do not commit it. Set `ADMIN_USERNAME=wzni` and temporarily set `ADMIN_PASSWORD` to the requested password for the first deployment. The migration service applies all table migrations, seeds catalog/content without overwriting CRM changes, then creates/updates the administrator with a salted hash. The app starts only after setup succeeds.

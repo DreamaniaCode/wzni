@@ -17,6 +17,8 @@ The five remaining full-audit findings are development-only lint dependencies th
 
 ## Scope of verification
 
+Deployment networking correction: supplied Coolify logs showed Prisma P1001 to the internal standalone PostgreSQL hostname while `app` had no logs because it awaited the migration service. Both Compose definitions now attach app/migrations to the existing shared Coolify network (configurable via COOLIFY_NETWORK). Compose syntax validation passed for both files. The actual server-side network attachment must still be confirmed during redeployment.
+
 SEO/access update: shared metadata now covers FR/AR storefronts, journal, articles and legal pages with titles/descriptions, canonical/hreflang, Open Graph and Twitter cards. ICO/SVG/Apple icons are generated from the code-native WZNI mark. Eight Chromium tests passed using one worker and a 60-second overall test limit; their assertions verify live metadata/icon responses, language sitemap alternates, no public CRM links and the previous CRM URL returning 404. The icon was visually inspected. The 38 unit/API tests, TypeScript and ESLint passed. Compose interpolation was checked with dummy credentials for both a configured external DATABASE_URL and the bundled fallback, without connecting to either test target.
 
 Latest update: 35 unit/API tests and seven Chromium browser tests passed, along with TypeScript, ESLint and Prisma schema validation. Added regression coverage for the exact invalid Coolify URL placeholder, safe URL normalization, CRM-configured Pixel initialization/consent and MAD events, bilingual blog pages, social preview metadata, old `/admin` returning 404 and CRM exclusion from the sitemap. The article layout was visually inspected.

@@ -1,7 +1,8 @@
 # Use with the existing Coolify PostgreSQL resource.
-# Enable Coolify's predefined network connection for this application.
+# App and migrations join the existing shared Coolify network explicitly.
 services:
   migrate:
+    networks: [default, coolify]
     build:
       context: .
       target: migration
@@ -15,6 +16,7 @@ services:
       - -c
       - 'npm run db:deploy && npm run db:seed && if [ -n "$$ADMIN_PASSWORD" ]; then npm run db:admin; fi'
   app:
+    networks: [default, coolify]
     build:
       context: .
       target: runtime
@@ -43,3 +45,8 @@ services:
       retries: 3
 volumes:
   product-uploads:
+networks:
+  default: {}
+  coolify:
+    external: true
+    name: ${COOLIFY_NETWORK:-coolify}
