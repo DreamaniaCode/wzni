@@ -31,6 +31,7 @@ export function track(name: string, data: Record<string, unknown> = {}) {
   const names: Record<string, string> = {
     PageView: "page_view",
     ViewContent: "view_item",
+    AddToCart: "add_to_cart",
     SelectProduct: "select_item",
     InitiateCheckout: "begin_checkout",
     Lead: "generate_lead",
@@ -43,7 +44,15 @@ export function track(name: string, data: Record<string, unknown> = {}) {
       ? { content_ids: [data.sku], content_type: "product" }
       : {}),
   };
-  if (["PageView", "ViewContent", "InitiateCheckout", "Lead"].includes(name))
+  if (
+    [
+      "PageView",
+      "ViewContent",
+      "AddToCart",
+      "InitiateCheckout",
+      "Lead",
+    ].includes(name)
+  )
     window.fbq?.("track", name, pixelData);
   else window.fbq?.("trackCustom", name, pixelData);
 }

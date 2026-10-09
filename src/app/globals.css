@@ -2170,3 +2170,56 @@ html[lang="ar"] body {
   padding: 16px 0;
   border-top: 1px solid #e1e6dc;
 }
+/* A distinct cart step before collecting delivery details. */
+.checkout[hidden] {
+  display: none;
+}
+.cart-section {
+  scroll-margin-top: 100px;
+}
+.cart-card {
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  gap: 28px;
+  align-items: center;
+  padding: 28px;
+  border: 1px solid #dce4dd;
+  border-radius: 20px;
+  background: #fff;
+  margin: 24px 0;
+}
+.cart-card img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.cart-card label {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0;
+}
+.cart-card input {
+  width: 80px;
+  padding: 10px;
+  border: 1px solid #dce4dd;
+  border-radius: 8px;
+}
+.cart-card strong {
+  font-size: 28px;
+}
+.cart-card .text-link {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+@media (max-width: 650px) {
+  .cart-card {
+    grid-template-columns: 1fr;
+    padding: 20px;
+    gap: 16px;
+  }
+  .cart-card img {
+    max-width: 200px;
+  }
+}

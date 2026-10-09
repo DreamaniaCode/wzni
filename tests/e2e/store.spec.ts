@@ -1,4 +1,61 @@
 import { test, expect } from "@playwright/test";
+test("cart persists, keeps its model, and starts checkout only on confirmation", async ({
+  page,
+}) => {
+  await page.route("https://connect.facebook.net/**", (route) =>
+    route.fulfill({ contentType: "application/javascript", body: "" }),
+  );
+  await page.goto("/fr");
+  await page
+    .locator(".consent")
+    .getByRole("button", { name: "Accepter", exact: true })
+    .click();
+  await expect(page.locator("#commander")).toBeHidden();
+  await page
+    .locator(".gallery-copy")
+    .getByRole("button", { name: "Ajouter au panier" })
+    .click();
+  await expect(page.locator(".cart-card")).toContainText("CB301-BLACK");
+  expect(
+    await page.evaluate(
+      () => window.fbq?.queue.filter((a) => a[1] === "AddToCart").length,
+    ),
+  ).toBe(1);
+  expect(
+    await page.evaluate(
+      () => window.fbq?.queue.filter((a) => a[1] === "InitiateCheckout").length,
+    ),
+  ).toBe(0);
+  await page
+    .getByRole("spinbutton", { name: "Quantité dans le panier" })
+    .fill("2");
+  await page.reload();
+  await expect(
+    page.getByRole("spinbutton", { name: "Quantité dans le panier" }),
+  ).toHaveValue("2");
+  await expect(page.locator(".consent")).toBeHidden();
+  await page
+    .locator(".product-card")
+    .first()
+    .getByRole("button", { name: "Choisir ce modèle", exact: true })
+    .click();
+  await expect(page.locator(".cart-card")).toContainText("CB301-BLACK");
+  await page.getByRole("button", { name: "Passer à la commande" }).click();
+  await expect(page.locator(".order-summary")).toContainText("CB301-BLACK");
+  await expect(page.locator(".summary-total")).toContainText("240 DH");
+  expect(
+    await page.evaluate(
+      () => window.fbq?.queue.filter((a) => a[1] === "InitiateCheckout").length,
+    ),
+  ).toBe(1);
+  await page.getByRole("button", { name: "Modifier le panier" }).click();
+  await page.getByRole("button", { name: "Retirer du panier" }).click();
+  await expect(page.locator("#panier")).toContainText("Votre panier est vide");
+  await expect(page.locator("#commander")).toBeHidden();
+  await page.reload();
+  await expect(page.locator("#panier")).toContainText("Votre panier est vide");
+});
+
 test("French selection, quantity, honest offline checkout, chat and Arabic RTL", async ({
   page,
 }) => {
@@ -16,9 +73,13 @@ test("French selection, quantity, honest offline checkout, chat and Arabic RTL",
     .click();
   await page
     .locator(".gallery-copy")
-    .getByRole("button", { name: "Commander maintenant" })
+    .getByRole("button", { name: "Ajouter au panier" })
     .click();
-  await page.getByRole("button", { name: "Augmenter la quantité" }).click();
+  await expect(page.locator("#commander")).toBeHidden();
+  await page
+    .getByRole("spinbutton", { name: "Quantité dans le panier" })
+    .fill("2");
+  await page.getByRole("button", { name: "Passer à la commande" }).click();
   await expect(page.locator(".summary-total")).toContainText("240 DH");
   await page.getByRole("textbox", { name: "Nom complet" }).fill("Client test");
   await page

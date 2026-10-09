@@ -73,6 +73,24 @@ it("does not load any pixel after consent refusal", async () => {
   expect(window.fbq).toBeUndefined();
 });
 
+it("sends AddToCart as a standard catalog event", async () => {
+  const { consent, track } = await import("../src/components/tracking");
+  consent(true);
+  track("AddToCart", { sku: "CB301-LED", quantity: 2, value: 240 });
+  expect(window.fbq?.queue).toContainEqual([
+    "track",
+    "AddToCart",
+    {
+      sku: "CB301-LED",
+      quantity: 2,
+      value: 240,
+      currency: "MAD",
+      content_ids: ["CB301-LED"],
+      content_type: "product",
+    },
+  ]);
+});
+
 it("restores accepted consent automatically and sends a catalog-matching product view", async () => {
   localStorage.setItem("wzni_consent", "yes");
   const { restoreTracking } = await import("../src/components/tracking");

@@ -15,8 +15,6 @@ import {
   ChevronRight,
   MessageCircle,
   X,
-  Plus,
-  Minus,
   Scale,
   Shapes,
   Tag,
@@ -87,13 +85,18 @@ export default function Storefront({
           );
     }),
     [quantity, setQuantity] = useState(1),
+    [cart, setCart] = useState<{ sku: string; quantity: number } | null>(null),
+    [checkoutOpen, setCheckoutOpen] = useState(false),
     [menu, setMenu] = useState(false),
     [chat, setChat] = useState(false),
     [zoom, setZoom] = useState(false),
     [error, setError] = useState(""),
-    [result, setResult] = useState<{ reference: string; total: number } | null>(
-      null,
-    ),
+    [result, setResult] = useState<{
+      reference: string;
+      total: number;
+      sku: string;
+      quantity: number;
+    } | null>(null),
     [custom, setCustom] = useState(false),
     [messages, setMessages] = useState<
       { role: "user" | "assistant"; text: string }[]
@@ -105,6 +108,39 @@ export default function Storefront({
     key = useRef("");
   const product = products[selected],
     number = store.whatsapp_number || "212783009072";
+  const orderProduct =
+    products.find((p) => p.sku === (cart?.sku || result?.sku)) || product;
+  const orderQuantity = cart?.quantity || result?.quantity || 1;
+  const addLabel = ar ? "زيد للسلة" : "Ajouter au panier";
+  useEffect(() => {
+    let saved: { sku: string; quantity: number } | null = null;
+    try {
+      const value = JSON.parse(localStorage.getItem("wzni_cart") || "null");
+      if (
+        value &&
+        visibleSkus.includes(value.sku) &&
+        Number.isInteger(value.quantity) &&
+        value.quantity >= 1 &&
+        value.quantity <= 20
+      )
+        saved = value;
+    } catch {
+      /* Ignore invalid or unavailable browser storage. */
+    }
+    const frame = requestAnimationFrame(() => setCart(saved));
+    return () => cancelAnimationFrame(frame);
+    // Restore once; prices always come from the current catalog.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  function saveCart(next: { sku: string; quantity: number } | null) {
+    setCart(next);
+    try {
+      if (next) localStorage.setItem("wzni_cart", JSON.stringify(next));
+      else localStorage.removeItem("wzni_cart");
+    } catch {
+      /* The cart remains usable when browser storage is disabled. */
+    }
+  }
   useEffect(() => {
     const hasChoice = restoreTracking(store.meta_pixel_id, {
       sku: product.sku,
@@ -147,17 +183,46 @@ export default function Storefront({
     setValue("quantity", next);
   }
   function checkout() {
-    track("InitiateCheckout", {
-      sku: product.sku,
-      quantity,
-      value: total(quantity, product.price),
-    });
+    const nextQuantity =
+      cart?.sku === product.sku
+        ? Math.min(20, cart.quantity + quantity)
+        : quantity;
+    const added =
+      cart?.sku === product.sku ? nextQuantity - cart.quantity : quantity;
+    saveCart({ sku: product.sku, quantity: nextQuantity });
+    setCheckoutOpen(false);
+    setResult(null);
+    if (added > 0)
+      track("AddToCart", {
+        sku: product.sku,
+        quantity: added,
+        value: total(added, product.price),
+      });
     document
-      .getElementById("commander")
+      .getElementById("panier")
       ?.scrollIntoView({ behavior: reduced ? "instant" : "smooth" });
     setChat(false);
   }
+  function beginCheckout() {
+    if (!cart) return;
+    setValue("product_sku", orderProduct.sku);
+    setValue("quantity", orderQuantity);
+    setCheckoutOpen(true);
+    setError("");
+    track("InitiateCheckout", {
+      sku: orderProduct.sku,
+      quantity: orderQuantity,
+      value: total(orderQuantity, orderProduct.price),
+    });
+    requestAnimationFrame(() =>
+      document
+        .getElementById("commander")
+        ?.scrollIntoView({ behavior: reduced ? "instant" : "smooth" }),
+    );
+    setChat(false);
+  }
   async function submit(data: OrderInput) {
+    if (!cart || !checkoutOpen) return;
     setError("");
     if (!key.current) key.current = crypto.randomUUID();
     const utm = new URLSearchParams(window.location.search);
@@ -167,7 +232,9 @@ export default function Storefront({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
-          expected_unit_price: product.price,
+          product_sku: orderProduct.sku,
+          quantity: orderQuantity,
+          expected_unit_price: orderProduct.price,
           idempotency_key: key.current,
           utm_source: utm.get("utm_source")?.slice(0, 100) || undefined,
           utm_medium: utm.get("utm_medium")?.slice(0, 100) || undefined,
@@ -189,8 +256,10 @@ export default function Storefront({
         );
         return;
       }
-      setResult(body);
-      track("Lead", { sku: product.sku, value: body.total });
+      setResult({ ...body, sku: orderProduct.sku, quantity: orderQuantity });
+      track("Lead", { sku: orderProduct.sku, value: body.total });
+      saveCart(null);
+      key.current = "";
     } catch {
       setError(t.failed);
     }
@@ -221,13 +290,13 @@ export default function Storefront({
     .map((p, i) => ({ p, i }))
     .filter(({ p }) => visibleSkus.includes(p.sku));
   const link = whatsapp(
-    product.sku,
-    quantity,
+    cart || result ? orderProduct.sku : product.sku,
+    cart || result ? orderQuantity : quantity,
     locale,
     number,
     result?.reference,
-    product.price,
-    product.name,
+    cart || result ? orderProduct.price : product.price,
+    cart || result ? orderProduct.name : product.name,
   );
   return (
     <div
@@ -275,8 +344,15 @@ export default function Storefront({
           >
             {ar ? "FR" : "العربية"}
           </Link>
-          <Button className="header-order" onClick={checkout}>
-            {t.order}
+          <Button
+            className="header-order"
+            onClick={() =>
+              document
+                .getElementById("panier")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
+          >
+            {ar ? "السلة" : "Panier"} ({cart?.quantity || 0})
             <ArrowUpRight size={16} />
           </Button>
           <button
@@ -317,7 +393,7 @@ export default function Storefront({
             </div>
             <div className="hero-buttons">
               <Button onClick={checkout}>
-                {t.now}
+                {addLabel}
                 <ArrowUpRight size={18} />
               </Button>
               <a className="text-link" href="#modeles">
@@ -554,7 +630,7 @@ export default function Storefront({
               <span>{t.delivery}</span>
             </div>
             <Button onClick={checkout}>
-              {t.now}
+              {addLabel}
               <ArrowUpRight size={18} />
             </Button>
           </div>
@@ -588,7 +664,84 @@ export default function Storefront({
             ))}
           </div>
         </section>
-        <section id="commander" className="section checkout">
+        <section id="panier" className="section cart-section">
+          <div className="eyebrow">01 · {ar ? "السلة" : "Votre panier"}</div>
+          <h2>{ar ? "راجع اختيارك" : "Votre sélection, en un coup d’œil"}</h2>
+          {cart ? (
+            <div className="cart-card">
+              <Image
+                src={orderProduct.image}
+                alt={orderProduct.name}
+                width={240}
+                height={160}
+              />
+              <div>
+                <h3>{orderProduct.name}</h3>
+                <p>
+                  {orderProduct.sku} · {orderProduct.price} DH
+                </p>
+                <label>
+                  {t.quantity}
+                  <input
+                    aria-label={
+                      ar ? "عدد المنتجات فالسلة" : "Quantité dans le panier"
+                    }
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={orderQuantity}
+                    onChange={(e) => {
+                      const q = Number(e.target.value);
+                      if (Number.isInteger(q) && q >= 1 && q <= 20) {
+                        saveCart({ ...cart, quantity: q });
+                        setCheckoutOpen(false);
+                      }
+                    }}
+                  />
+                </label>
+                <button
+                  className="text-link"
+                  onClick={() => {
+                    saveCart(null);
+                    setCheckoutOpen(false);
+                  }}
+                >
+                  {ar ? "حيد من السلة" : "Retirer du panier"}
+                </button>
+              </div>
+              <div>
+                <strong>{total(orderQuantity, orderProduct.price)} DH</strong>
+                <p>{t.delivery}</p>
+                <Button onClick={beginCheckout}>
+                  {ar ? "كمّل الطلب" : "Passer à la commande"}
+                  <ArrowRight size={18} />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p>
+              {ar
+                ? "السلة خاوية. اختار الموديل وزيدو للسلة."
+                : "Votre panier est vide. Choisissez un modèle et ajoutez-le au panier."}
+            </p>
+          )}
+          <p>
+            {ar
+              ? "موديل واحد فالطلب، بالعدد اللي بغيتي. إضافة موديل آخر كتبدل الاختيار."
+              : "Un modèle par commande, dans la quantité souhaitée. Ajouter un autre modèle remplace votre sélection."}
+          </p>
+          <a className="text-link" href="#modeles">
+            {ar ? "شوف الموديلات" : "Continuer mes achats"}
+          </a>
+        </section>
+        <section
+          id="commander"
+          className="section checkout"
+          hidden={!checkoutOpen && !result}
+        >
+          <div className="eyebrow">
+            02 · {ar ? "التوصيل والتأكيد" : "Livraison et confirmation"}
+          </div>
           <div className="eyebrow">{t.checkout}</div>
           <h2>{t.checkoutTitle}</h2>
           {result ? (
@@ -659,19 +812,7 @@ export default function Storefront({
                   </label>
                   <label>
                     {t.model}
-                    <select
-                      {...register("product_sku")}
-                      value={product.sku}
-                      onChange={(e) =>
-                        select(
-                          products.findIndex((p) => p.sku === e.target.value),
-                        )
-                      }
-                    >
-                      {available.map(({ p }) => (
-                        <option key={p.sku}>{p.sku}</option>
-                      ))}
-                    </select>
+                    <input value={orderProduct.name} readOnly />
                   </label>
                 </div>
                 {custom && (
@@ -727,37 +868,30 @@ export default function Storefront({
               </form>
               <aside className="order-summary">
                 <div className="eyebrow">{t.summary}</div>
+                <button
+                  className="text-link"
+                  onClick={() => {
+                    setCheckoutOpen(false);
+                    document.getElementById("panier")?.scrollIntoView();
+                  }}
+                >
+                  {ar ? "بدّل السلة" : "Modifier le panier"}
+                </button>
                 <Image
-                  src={product.image}
-                  alt={product.name}
+                  src={orderProduct.image}
+                  alt={orderProduct.name}
                   width={360}
                   height={240}
                 />
-                <h3>{product.name}</h3>
-                <p className="sku">{product.sku}</p>
+                <h3>{orderProduct.name}</h3>
+                <p className="sku">{orderProduct.sku}</p>
                 <div className="summary-line">
                   <span>{t.quantity}</span>
-                  <div className="quantity">
-                    <button
-                      onClick={() => qty(quantity - 1)}
-                      aria-label={ar ? "نقص العدد" : "Diminuer la quantité"}
-                      disabled={quantity === 1}
-                    >
-                      <Minus size={15} />
-                    </button>
-                    <output>{quantity}</output>
-                    <button
-                      onClick={() => qty(quantity + 1)}
-                      aria-label={ar ? "زيد العدد" : "Augmenter la quantité"}
-                      disabled={quantity === 20}
-                    >
-                      <Plus size={15} />
-                    </button>
-                  </div>
+                  <span>{orderQuantity}</span>
                 </div>
                 <div className="summary-line">
                   <span>{t.unit}</span>
-                  <span>{product.price} DH</span>
+                  <span>{orderProduct.price} DH</span>
                 </div>
                 <div className="summary-line">
                   <span>{t.shipping}</span>
@@ -765,7 +899,7 @@ export default function Storefront({
                 </div>
                 <div className="summary-total">
                   <span>{t.total}</span>
-                  <strong>{total(quantity, product.price)} DH</strong>
+                  <strong>{total(orderQuantity, orderProduct.price)} DH</strong>
                 </div>
                 <div className="summary-city">
                   <MapPin size={15} />
@@ -819,7 +953,7 @@ export default function Storefront({
           <h2>{t.closing}</h2>
           <p>{t.closingText}</p>
           <Button onClick={checkout}>
-            {t.now}
+            {addLabel}
             <ArrowUpRight size={18} />
           </Button>
         </section>
@@ -884,7 +1018,7 @@ export default function Storefront({
           <small>{t.delivery}</small>
         </span>
         <Button onClick={checkout}>
-          {t.order}
+          {addLabel}
           <ArrowUpRight size={16} />
         </Button>
       </div>
@@ -937,7 +1071,7 @@ export default function Storefront({
             >
               {t.models}
             </button>
-            <button onClick={checkout}>{t.now}</button>
+            <button onClick={checkout}>{addLabel}</button>
             <button onClick={() => ask(t.priceAction)}>{t.priceAction}</button>
             <button onClick={() => ask(t.deliveryAction)}>
               {t.deliveryAction}
