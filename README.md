@@ -40,7 +40,7 @@ The fixed logo is `src/components/brand-logo.tsx`, with identical Latin/Arabic a
 Repository: [DreamaniaCode/wzni](https://github.com/DreamaniaCode/wzni).
 
 1. Create a Git-based application in Coolify using the Docker Compose build pack. Select the implementation branch and `compose.yaml`.
-2. Set `POSTGRES_PASSWORD` to a strong random hexadecimal/alphanumeric value. Set `SITE_URL` and `NEXT_PUBLIC_SITE_URL` to `https://wzni.myskillscloud.com`. Enter the actual URL, never the Coolify placeholder “Set the public HTTPS domain”. Keep PostgreSQL off public ports. Runtime `SITE_URL` takes priority; invalid values fall back safely rather than crashing metadata.
+2. Set `POSTGRES_PASSWORD` to a strong random hexadecimal/alphanumeric value. Set `SITE_URL` and `NEXT_PUBLIC_SITE_URL` to `https://wzni.store`. Enter the actual URL, never the Coolify placeholder “Set the public HTTPS domain”. Keep PostgreSQL off public ports. Runtime `SITE_URL` takes priority; invalid values fall back safely rather than crashing metadata.
 3. Assign the domain to the `app` service, port 3000. Deploy. The one-off `migrate` service applies migrations/seeds without overwriting CRM edits; the app waits for it to succeed.
 4. Create the first administrator from the repository checkout on the deployment server. Export `ADMIN_EMAIL` and temporarily set `ADMIN_PASSWORD` without putting it in command history, then run:
 

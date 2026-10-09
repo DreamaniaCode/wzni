@@ -25,8 +25,8 @@ services:
     expose: ["3000"]
     environment:
       DATABASE_URL: ${DATABASE_URL:?Set the internal PostgreSQL connection URL}
-      SITE_URL: ${SITE_URL:-https://wzni.myskillscloud.com}
-      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://wzni.myskillscloud.com}
+      SITE_URL: ${SITE_URL:-https://wzni.store}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://wzni.store}
       AI_API_URL: ${AI_API_URL:-}
       AI_API_KEY: ${AI_API_KEY:-}
       AI_MODEL: ${AI_MODEL:-}

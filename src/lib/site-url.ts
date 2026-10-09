@@ -11,12 +11,14 @@ export function siteUrl() {
         !url.username &&
         !url.password
       )
-        return url.origin;
+        return url.hostname === "wzni.myskillscloud.com"
+          ? "https://wzni.store"
+          : url.origin;
     } catch {
       // Coolify placeholder values must never break public rendering.
     }
   }
   return process.env.NODE_ENV === "production"
-    ? "https://wzni.myskillscloud.com"
+    ? "https://wzni.store"
     : "http://localhost:3000";
 }
