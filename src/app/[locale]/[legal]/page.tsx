@@ -2,6 +2,7 @@ import Link from "next/link";
 import BrandLogo from "@/components/brand-logo";
 import { notFound } from "next/navigation";
 import type { Locale } from "@/lib/catalog";
+import { pageMetadata } from "@/lib/seo";
 const texts = {
   fr: {
     confidentialite: {
@@ -58,6 +59,21 @@ const texts = {
     },
   },
 };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale; legal: string }>;
+}) {
+  const { locale, legal } = await params;
+  if (!(legal in texts.fr)) notFound();
+  const content = texts[locale][legal as keyof typeof texts.fr];
+  return pageMetadata(
+    locale,
+    "/" + legal,
+    content.title + " | WZNI",
+    content.paragraphs[0],
+  );
+}
 export default async function Legal({
   params,
 }: {

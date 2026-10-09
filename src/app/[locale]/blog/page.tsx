@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import BlogLinks from "@/components/blog-links";
 import BrandLogo from "@/components/brand-logo";
-import { siteUrl } from "@/lib/site-url";
+import { pageMetadata } from "@/lib/seo";
 import type { Locale } from "@/lib/catalog";
 export const dynamic = "force-dynamic";
 export async function generateMetadata({
@@ -11,18 +11,16 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
-    metadataBase: new URL(siteUrl()),
-    title:
-      locale === "ar"
-        ? "دليل ميزان الوزن | وزني مراكش"
-        : "Guides et conseils sur les balances | WZNI Marrakech",
-    alternates: {
-      canonical: `/${locale}/blog`,
-      languages: { fr: "/fr/blog", ar: "/ar/blog" },
-    },
-    openGraph: { images: ["/social/wzni-maroc.jpg"] },
-  };
+  return pageMetadata(
+    locale,
+    "/blog",
+    locale === "ar"
+      ? "دليل ميزان الوزن | وزني مراكش"
+      : "Guides et conseils sur les balances | WZNI Marrakech",
+    locale === "ar"
+      ? "نصائح وزني لاختيار ميزان الوزن واستعماله فالدار، مع معلومات عامة على الصحة والتوصيل فمراكش."
+      : "Les guides WZNI pour choisir une balance électronique, utiliser son pèse-personne à la maison et garder du recul sur son poids. Livraison à Marrakech.",
+  );
 }
 export default async function BlogPage({
   params,

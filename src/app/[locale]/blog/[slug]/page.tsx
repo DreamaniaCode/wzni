@@ -8,27 +8,20 @@ import type { Locale } from "@/lib/catalog";
 import { publicData } from "@/lib/server";
 import { contentText } from "@/lib/store-copy";
 import { siteUrl } from "@/lib/site-url";
+import { pageMetadata } from "@/lib/seo";
 type Props = { params: Promise<{ locale: Locale; slug: string }> };
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params,
     article = articles.find((a) => a.slug === slug);
   if (!article) notFound();
-  return {
-    metadataBase: new URL(siteUrl()),
-    title: article.title[locale] + " | WZNI",
-    description: article.description[locale],
-    alternates: {
-      canonical: `/${locale}/blog/${slug}`,
-      languages: { fr: `/fr/blog/${slug}`, ar: `/ar/blog/${slug}` },
-    },
-    openGraph: {
-      type: "article",
-      title: article.title[locale],
-      description: article.description[locale],
-      images: ["/social/wzni-maroc.jpg"],
-    },
-  };
+  return pageMetadata(
+    locale,
+    `/blog/${slug}`,
+    article.title[locale] + " | WZNI",
+    article.description[locale],
+    "article",
+  );
 }
 export default async function ArticlePage({ params }: Props) {
   const { locale, slug } = await params,

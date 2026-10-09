@@ -19,7 +19,7 @@ services:
       target: migration
     restart: "no"
     environment:
-      DATABASE_URL: postgresql://wzni:${POSTGRES_PASSWORD}@postgres:5432/wzni
+      DATABASE_URL: ${DATABASE_URL:-postgresql://wzni:${POSTGRES_PASSWORD}@postgres:5432/wzni}
     depends_on:
       postgres:
         condition: service_healthy
@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
     expose: ["3000"]
     environment:
-      DATABASE_URL: postgresql://wzni:${POSTGRES_PASSWORD}@postgres:5432/wzni
+      DATABASE_URL: ${DATABASE_URL:-postgresql://wzni:${POSTGRES_PASSWORD}@postgres:5432/wzni}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?Set the public HTTPS domain}
       SITE_URL: ${SITE_URL:-https://wzni.myskillscloud.com}
       AI_API_URL: ${AI_API_URL:-}

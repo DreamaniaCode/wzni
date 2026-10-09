@@ -14,6 +14,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       ...articles.map((a) => "/blog/" + a.slug),
     ].map((path) => ({
       url: `${site}/${locale}${path}`,
+      alternates: {
+        languages: { fr: `${site}/fr${path}`, ar: `${site}/ar${path}` },
+      },
     })),
   );
 }

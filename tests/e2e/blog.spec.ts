@@ -15,7 +15,7 @@ test("bilingual guides, social preview and private CRM route", async ({
   await expect(page.locator(".article-body")).toContainText("الصحة");
   expect((await request.get("/fr/blog/missing-article")).status()).toBe(404);
   expect((await request.get("/admin")).status()).toBe(404);
-  await page.goto("/gestion-7c9e4b2a");
+  await page.goto("/espace-4f6c91a2e8b749d3ac025b76");
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
     "content",
     /noindex/,

@@ -4,6 +4,7 @@ import { type Locale } from "@/lib/catalog";
 import { publicData } from "@/lib/server";
 import { contentText } from "@/lib/store-copy";
 import { siteUrl } from "@/lib/site-url";
+import { pageMetadata } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
@@ -21,9 +22,7 @@ export async function generateMetadata({
     (minimum ? " — " + minimum + " DH" : "");
   const description = contentText("seo_meta_description", locale, content);
   return {
-    metadataBase: new URL(siteUrl()),
-    title,
-    description,
+    ...pageMetadata(locale, "", title, description),
     keywords:
       locale === "fr"
         ? [
@@ -32,23 +31,6 @@ export async function generateMetadata({
             "balance PRIMA Marrakech",
           ]
         : ["ميزان إلكتروني مراكش", "ميزان الوزن مراكش", "ميزان PRIMA"],
-    alternates: {
-      canonical: "/" + locale,
-      languages: { fr: "/fr", ar: "/ar" },
-    },
-    openGraph: {
-      title,
-      description,
-      url: "/" + locale,
-      locale: locale === "ar" ? "ar_MA" : "fr_MA",
-      images: ["/social/wzni-maroc.jpg"],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: ["/social/wzni-maroc.jpg"],
-    },
   };
 }
 export default async function Page({

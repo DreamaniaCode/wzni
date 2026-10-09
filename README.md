@@ -19,9 +19,9 @@ The admin command requires `ADMIN_USERNAME` (for example `wzni`, or `ADMIN_EMAIL
 
 Without a database, the storefront displays catalog defaults but checkout/review submission fails honestly. It never fabricates an order reference or a saved review.
 
-## CRM: /gestion-7c9e4b2a
+## Private CRM access
 
-Bookmark this address privately. `/admin` returns 404. The CRM has no public navigation link, no sitemap entry and noindex metadata. Its uncommon URL reduces discovery; database authentication remains required.
+Bookmark the current address provided to the owner privately. `/admin` and the previous CRM address return 404. The CRM has no public navigation link, no sitemap entry and noindex metadata. Its uncommon URL reduces discovery; database authentication remains required. A public source repository does not make the route name a secret.
 
 - Orders, status changes, search/filter, customer WhatsApp contact and CSV export.
 - Dashboard totals aggregate across the database. The table/export shows the latest 5,000 orders; older records require database reporting.
@@ -50,7 +50,7 @@ docker compose run --rm -e ADMIN_EMAIL -e ADMIN_PASSWORD migrate npm run db:admi
 
 Remove `ADMIN_PASSWORD` afterward. This runs in the migration image; the slim app image omits setup tooling.
 
-5. Sign in at `/gestion-7c9e4b2a`, review images/text/prices and activate COD only if offered. Facebook and Instagram use @wznimaroc. TikTok remains a placeholder.
+5. Sign in using the private CRM address provided to the owner, review images/text/prices and activate COD only if offered. Facebook and Instagram use @wznimaroc. TikTok remains a placeholder.
 6. On staging, verify a real stored order, duplicate retry, login/security, review approval and photo persistence across redeploys.
 7. Back up both named volumes: `postgres-data` and `product-uploads`. Restoring the database alone does not restore uploaded photos. Keep the app behind Coolify HTTPS; configure proxy upload-size limits and overwrite the client-IP header.
 
@@ -63,6 +63,8 @@ References: [Prisma v7 Docker](https://www.prisma.io/docs/guides/v7/deployment/d
 ## Environment and optional integrations
 
 ### Existing internal Coolify PostgreSQL
+
+The default `compose.yaml` now also honors a configured `DATABASE_URL` for both the app and migrations instead of overriding it with the bundled database URL. When that variable is unset, the bundled database remains the fallback. Enable the predefined network connection when using the internal hostname. Use `compose.external.yaml` to avoid starting a bundled database entirely.
 
 Select `compose.external.yaml` instead of `compose.yaml` to use the existing PostgreSQL resource. Enable **Connect to Predefined Network** so its internal hostname resolves. Set `DATABASE_URL` to the supplied internal URL in Coolify's environment editor; do not commit it. Set `ADMIN_USERNAME=wzni` and temporarily set `ADMIN_PASSWORD` to the requested password for the first deployment. The migration service applies all table migrations, seeds catalog/content without overwriting CRM changes, then creates/updates the administrator with a salted hash. The app starts only after setup succeeds.
 
@@ -90,7 +92,7 @@ Orders are enquiries awaiting merchant confirmation; COD defaults off. Editable 
 
 - `/fr`, `/ar`: store, guidance, reviews and checkout
 - `/{locale}/confidentialite`, `/conditions`, `/livraison`: legal/delivery pages
-- `/gestion-7c9e4b2a`: orders and content CRM
+- Private CRM address: orders and content CRM
 - `/fr/blog`, `/ar/blog`: bilingual journal and article pages
 - `/api/orders`, `/api/reviews`, `/api/chat`: customer actions
 - `/api/admin`, `/api/admin/auth`, `/api/admin/media`: protected admin actions

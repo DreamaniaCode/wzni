@@ -104,7 +104,7 @@ test("CRM controls submit bilingual text, price and social link changes", async 
       await route.fulfill({ json: { ok: true } });
     } else await route.fulfill({ json: fixture });
   });
-  await page.goto("/gestion-7c9e4b2a");
+  await page.goto("/espace-4f6c91a2e8b749d3ac025b76");
   await page
     .getByRole("button", { name: "Ouvrir ma session existante" })
     .click();

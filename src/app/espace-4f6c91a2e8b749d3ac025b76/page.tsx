@@ -1,6 +1,6 @@
 import Admin from "@/components/admin";
 export const metadata = {
-  title: "WZNI — Administration",
+  title: "WZNI — Connexion",
   robots: { index: false, follow: false },
 };
 export default function AdminPage() {
