@@ -26,6 +26,8 @@ services:
         condition: service_healthy
   app:
     networks: [default, coolify]
+    labels:
+      - "traefik.docker.network=${COOLIFY_NETWORK:-coolify}"
     build:
       context: .
       target: runtime

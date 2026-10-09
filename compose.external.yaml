@@ -17,6 +17,8 @@ services:
       - 'npm run db:deploy && npm run db:seed && if [ -n "$$ADMIN_PASSWORD" ]; then npm run db:admin; fi'
   app:
     networks: [default, coolify]
+    labels:
+      - "traefik.docker.network=${COOLIFY_NETWORK:-coolify}"
     build:
       context: .
       target: runtime

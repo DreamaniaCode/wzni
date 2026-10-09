@@ -17,6 +17,8 @@ The five remaining full-audit findings are development-only lint dependencies th
 
 ## Scope of verification
 
+Proxy routing correction: later server logs showed Next.js ready and successful migrations/seeding, despite public health requests timing out. Both Compose files now explicitly set traefik.docker.network to the shared Coolify network, avoiding ambiguous backend network selection for the app's two network interfaces. Compose syntax is validated; live proxy recovery requires redeployment and a successful external health request.
+
 Deployment networking correction: supplied Coolify logs showed Prisma P1001 to the internal standalone PostgreSQL hostname while `app` had no logs because it awaited the migration service. Both Compose definitions now attach app/migrations to the existing shared Coolify network (configurable via COOLIFY_NETWORK). Compose syntax validation passed for both files. The actual server-side network attachment must still be confirmed during redeployment.
 
 SEO/access update: shared metadata now covers FR/AR storefronts, journal, articles and legal pages with titles/descriptions, canonical/hreflang, Open Graph and Twitter cards. ICO/SVG/Apple icons are generated from the code-native WZNI mark. Eight Chromium tests passed using one worker and a 60-second overall test limit; their assertions verify live metadata/icon responses, language sitemap alternates, no public CRM links and the previous CRM URL returning 404. The icon was visually inspected. The 38 unit/API tests, TypeScript and ESLint passed. Compose interpolation was checked with dummy credentials for both a configured external DATABASE_URL and the bundled fallback, without connecting to either test target.
