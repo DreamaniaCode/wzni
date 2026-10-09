@@ -65,7 +65,22 @@ test("CRM controls submit bilingual text, price and social link changes", async 
   page,
 }) => {
   const fixture = {
-    orders: [],
+    orders: [
+      {
+        id: "06bd4554-fc69-4a8b-babc-13837883cc52",
+        public_reference: "WZNI-TEST-001",
+        customer_name: "Client de test",
+        customer_phone: "+212600000000",
+        district: "Guéliz",
+        delivery_address: "Adresse de test",
+        delivery_notes: "",
+        product_sku: "CB301-BLACK",
+        quantity: 2,
+        total_mad: 240,
+        status: "new",
+        created_at: "2026-10-09T12:00:00Z",
+      },
+    ],
     settings: {
       whatsapp_number: "212783009072",
       cod_enabled: false,
@@ -94,7 +109,7 @@ test("CRM controls submit bilingual text, price and social link changes", async 
     faq: [],
     content: [],
     reviews: [],
-    overview: { counts: [], revenue: 0, best: "—" },
+    overview: { counts: [{ status: "new", count: 1 }], revenue: 0, best: "—" },
     ai_configured: false,
   };
   const changes: Record<string, unknown>[] = [];
@@ -105,9 +120,17 @@ test("CRM controls submit bilingual text, price and social link changes", async 
     } else await route.fulfill({ json: fixture });
   });
   await page.goto("/espace-4f6c91a2e8b749d3ac025b76");
-  await page
-    .getByRole("button", { name: "Ouvrir ma session existante" })
-    .click();
+  await expect(page.locator("#crm-orders")).toBeVisible();
+  await expect(page.locator("#crm-orders")).toContainText("WZNI-TEST-001");
+  await expect(page.locator("#crm-products")).toBeHidden();
+  await page.getByLabel("Rechercher une commande").fill("introuvable");
+  await expect(page.locator(".crm-empty")).toContainText("Aucun résultat");
+  await page.getByRole("button", { name: "Effacer les filtres" }).click();
+  await page.screenshot({
+    path: "test-results/crm-orders.png",
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Produits (1)", exact: true }).click();
   await page.getByLabel("Prix par unité (MAD)").fill("135");
   await page.getByRole("button", { name: "Enregistrer le produit" }).click();
   await expect
@@ -115,6 +138,13 @@ test("CRM controls submit bilingual text, price and social link changes", async 
       changes.some((c) => c.type === "product" && c.price_mad === 135),
     )
     .toBe(true);
+  await page.screenshot({
+    path: "test-results/crm-products.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Textes et SEO", exact: true })
+    .click();
   await page
     .locator("#crm-content summary")
     .filter({ hasText: "hero headline" })
@@ -133,6 +163,7 @@ test("CRM controls submit bilingual text, price and social link changes", async 
       ),
     )
     .toBe(true);
+  await page.getByRole("button", { name: "Paramètres", exact: true }).click();
   await page
     .locator("#crm-brand")
     .getByLabel("facebook", { exact: true })
@@ -147,4 +178,27 @@ test("CRM controls submit bilingual text, price and social link changes", async 
       ),
     )
     .toBe(true);
+  fixture.orders = [];
+  fixture.overview.counts = [];
+  await page.getByRole("button", { name: "Actualiser", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Commandes (0)", exact: true })
+    .click();
+  await expect(page.locator(".crm-empty")).toContainText(
+    "Aucune commande pour le moment",
+  );
+  await page
+    .getByRole("button", { name: "Voir mes produits", exact: true })
+    .click();
+  await expect(page.locator("#crm-products")).toBeVisible();
+  await page.setViewportSize({ width: 375, height: 812 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: "test-results/crm-mobile.png",
+    fullPage: true,
+  });
 });

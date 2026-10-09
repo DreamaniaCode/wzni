@@ -123,7 +123,9 @@ function ProductEditor({
       </label>
       {(["description_fr", "description_ar"] as const).map((key) => (
         <label key={key}>
-          {key}
+          {key === "description_fr"
+            ? "Description en français"
+            : "Description en arabe"}
           <textarea
             required
             dir={key.endsWith("ar") ? "rtl" : "ltr"}
@@ -142,7 +144,9 @@ function ProductEditor({
       </label>
       {(["color_fr", "color_ar"] as const).map((key) => (
         <label key={key}>
-          {key}
+          {key === "color_fr"
+            ? "Nom de la couleur en français"
+            : "Nom de la couleur en arabe"}
           <input
             required
             value={draft[key]}
@@ -214,6 +218,7 @@ export default function ContentCrm({
   reviews,
   save,
   busy,
+  view,
 }: {
   products: ManagedProduct[];
   settings: ManagedSettings;
@@ -221,6 +226,7 @@ export default function ContentCrm({
   reviews: ManagedReview[];
   save: Save;
   busy: boolean;
+  view?: string;
 }) {
   const [theme, setTheme] = useState(settings);
   const blocks = Object.entries(defaultContent).map(
@@ -233,7 +239,7 @@ export default function ContentCrm({
   );
   return (
     <div className="content-crm">
-      <section id="crm-products">
+      <section id="crm-products" hidden={!!view && view !== "products"}>
         <h2>
           <ImagePlus />
           Produits, photos et prix
@@ -249,7 +255,7 @@ export default function ContentCrm({
           ))}
         </div>
       </section>
-      <section id="crm-brand">
+      <section id="crm-brand" hidden={!!view && view !== "settings"}>
         <h2>
           <Palette />
           Couleurs et réseaux sociaux
@@ -320,7 +326,7 @@ export default function ContentCrm({
           <button disabled={busy}>Enregistrer la marque</button>
         </form>
       </section>
-      <section id="crm-content">
+      <section id="crm-content" hidden={!!view && view !== "content"}>
         <h2>
           <FileText />
           Textes bilingues et SEO
@@ -339,7 +345,7 @@ export default function ContentCrm({
           />
         ))}
       </section>
-      <section id="crm-reviews">
+      <section id="crm-reviews" hidden={!!view && view !== "reviews"}>
         <h2>
           <Star />
           Avis clients à modérer

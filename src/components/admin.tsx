@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BrandLogo from "./brand-logo";
 import ContentCrm, {
   type ManagedProduct,
@@ -45,7 +45,23 @@ type Dashboard = {
   ai_configured: boolean;
 };
 const statuses = ["new", "confirmed", "in_delivery", "delivered", "cancelled"];
+const statusLabels: Record<string, string> = {
+  new: "Nouvelle",
+  confirmed: "Confirmée",
+  in_delivery: "En livraison",
+  delivered: "Livrée",
+  cancelled: "Annulée",
+};
+const views = [
+  { id: "orders", label: "Commandes" },
+  { id: "products", label: "Produits" },
+  { id: "content", label: "Textes et SEO" },
+  { id: "reviews", label: "Avis clients" },
+  { id: "settings", label: "Paramètres" },
+  { id: "faq", label: "FAQ" },
+] as const;
 export default function Admin() {
+  const [view, setView] = useState<(typeof views)[number]["id"]>("orders");
   const [data, setData] = useState<Dashboard | null>(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
@@ -58,6 +74,26 @@ export default function Admin() {
       answer_ar: "",
       active: true,
     });
+  useEffect(() => {
+    let active = true;
+    fetch("/api/admin", { cache: "no-store" })
+      .then(async (response) => {
+        if (!active) return;
+        if (response.ok) {
+          const dashboard = await response.json();
+          if (active) setData(dashboard);
+        } else if (response.status !== 401)
+          setError(
+            "Le CRM ne peut pas charger les données. Vérifiez la connexion PostgreSQL puis actualisez.",
+          );
+      })
+      .catch(() => {
+        if (active) setError("Impossible de joindre le CRM. Réessayez.");
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   async function load() {
     setBusy(true);
     try {
@@ -164,9 +200,13 @@ export default function Admin() {
     URL.revokeObjectURL(url);
   }
   return (
-    <main className="admin">
+    <main className="admin" data-view={view}>
       <BrandLogo />
-      <h1 style={{ marginTop: 25 }}>Administration</h1>
+      <h1 style={{ marginTop: 25 }}>
+        {data
+          ? "Votre boutique, en un coup d’œil"
+          : "Connexion à votre boutique"}
+      </h1>
       {error && (
         <p role="alert" className="form-error">
           {error}
@@ -205,6 +245,25 @@ export default function Admin() {
         </>
       ) : (
         <>
+          <nav className="crm-navigation" aria-label="Navigation du CRM">
+            {views.map((item) => (
+              <button
+                key={item.id}
+                aria-pressed={view === item.id}
+                onClick={() => {
+                  setView(item.id);
+                  window.scrollTo({ top: 0, behavior: "instant" });
+                }}
+              >
+                {item.label}
+                {item.id === "orders"
+                  ? ` (${data.overview.counts.reduce((sum, c) => sum + c.count, 0)})`
+                  : item.id === "products"
+                    ? ` (${data.products.length})`
+                    : ""}
+              </button>
+            ))}
+          </nav>
           <div className="toolbar">
             <button disabled={busy} onClick={load}>
               Actualiser
@@ -220,7 +279,7 @@ export default function Admin() {
               Déconnexion
             </button>
           </div>
-          <div className="stats">
+          <div className="stats" hidden={view !== "orders"}>
             <div>
               Total
               <strong>
@@ -229,7 +288,7 @@ export default function Admin() {
             </div>
             {statuses.map((s) => (
               <div key={s}>
-                {s}
+                {statusLabels[s]}
                 <strong>
                   {data.overview.counts.find((c) => c.status === s)?.count || 0}
                 </strong>
@@ -243,9 +302,12 @@ export default function Admin() {
               Meilleur modèle livré<strong>{data.overview.best}</strong>
             </div>
           </div>
-          <p>Vue limitée aux 5 000 commandes les plus récentes.</p>
-          <section>
+          <section id="crm-orders" hidden={view !== "orders"}>
             <h2>Commandes</h2>
+            <p>
+              Suivez vos clients, les livraisons et les statuts. Les 5 000
+              commandes les plus récentes sont affichées.
+            </p>
             <div className="toolbar">
               <input
                 placeholder="Rechercher"
@@ -260,12 +322,39 @@ export default function Admin() {
               >
                 <option value="">Tous les statuts</option>
                 {statuses.map((s) => (
-                  <option key={s}>{s}</option>
+                  <option key={s} value={s}>
+                    {statusLabels[s]}
+                  </option>
                 ))}
               </select>
               <button onClick={csv}>Exporter CSV</button>
             </div>
-            <div className="table-scroll">
+            {rows.length === 0 && (
+              <div className="crm-empty">
+                <h3>
+                  {data.orders.length
+                    ? "Aucun résultat"
+                    : "Aucune commande pour le moment"}
+                </h3>
+                <p>
+                  {data.orders.length
+                    ? "Modifiez la recherche ou le statut pour retrouver une commande."
+                    : "Les commandes enregistrées sur la boutique apparaîtront ici, avec les coordonnées du client et le modèle choisi."}
+                </p>
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setFilter("");
+                    if (!data.orders.length) setView("products");
+                  }}
+                >
+                  {data.orders.length
+                    ? "Effacer les filtres"
+                    : "Voir mes produits"}
+                </button>
+              </div>
+            )}
+            <div className="table-scroll" hidden={rows.length === 0}>
               <table>
                 <thead>
                   <tr>
@@ -315,7 +404,9 @@ export default function Admin() {
                           }
                         >
                           {statuses.map((s) => (
-                            <option key={s}>{s}</option>
+                            <option key={s} value={s}>
+                              {statusLabels[s]}
+                            </option>
                           ))}
                         </select>
                       </td>
@@ -339,7 +430,7 @@ export default function Admin() {
               </table>
             </div>
           </section>
-          <section>
+          <section hidden={view !== "settings"}>
             <h2>Paramètres</h2>
             <form
               onSubmit={(e) => {
@@ -394,7 +485,7 @@ export default function Admin() {
               <button disabled={busy}>Enregistrer</button>
             </form>
           </section>
-          <section>
+          <section hidden>
             <h2>Visibilité des modèles</h2>
             {data.products.map((p) => (
               <label
@@ -418,7 +509,7 @@ export default function Admin() {
               </label>
             ))}
           </section>
-          <section>
+          <section hidden={view !== "faq"}>
             <h2>FAQ bilingue</h2>
             {data.faq.map((f) => (
               <button
@@ -488,6 +579,7 @@ export default function Admin() {
             reviews={data.reviews}
             save={mutate}
             busy={busy}
+            view={view}
           />
         </>
       )}

@@ -1953,3 +1953,146 @@ html[lang="ar"] body {
     font-size: 23px;
   }
 }
+.admin [hidden] {
+  display: none !important;
+}
+.admin {
+  max-width: 1440px;
+  padding: 32px clamp(16px, 3vw, 48px);
+  color: #101828;
+}
+.admin > h1 {
+  font-size: clamp(24px, 3vw, 36px);
+  margin-bottom: 24px;
+}
+.admin .crm-navigation {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 16px 0;
+  background: #faf9f6;
+  border-bottom: 1px solid #e1e6dc;
+  margin-bottom: 20px;
+}
+.admin .crm-navigation button {
+  white-space: nowrap;
+  background: #fff;
+  color: #344054;
+  border: 1px solid #dfe5e0;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+.admin .crm-navigation button[aria-pressed="true"] {
+  background: #193626;
+  color: #fff;
+  border-color: #193626;
+}
+.admin .toolbar {
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.admin .stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.admin .stats > div {
+  border: 1px solid #e1e6dc;
+  border-radius: 14px;
+  padding: 18px;
+  color: #526070;
+}
+.admin .stats strong {
+  color: #101828;
+  margin-top: 8px;
+  font-size: 27px;
+}
+.admin section {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e1e6dc;
+  border-radius: 16px;
+  margin: 20px 0;
+}
+.admin section h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+.admin section > p {
+  color: #526070;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+.admin form {
+  max-width: 720px;
+}
+.admin input,
+.admin select,
+.admin textarea {
+  color: #101828;
+  background: #fff;
+}
+.admin .table-scroll {
+  border: 1px solid #e1e6dc;
+  border-radius: 12px;
+}
+.admin table {
+  font-size: 14px;
+  min-width: 1050px;
+}
+.admin th {
+  background: #f3f6f3;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.admin td {
+  vertical-align: top;
+  line-height: 1.5;
+}
+.admin .crm-empty {
+  text-align: center;
+  padding: 48px 20px;
+  background: #f6f8f5;
+  border: 1px dashed #ccd8ce;
+  border-radius: 14px;
+  margin-top: 20px;
+}
+.admin .crm-empty h3 {
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+.admin .crm-empty p {
+  max-width: 540px;
+  margin: 0 auto 20px;
+  color: #526070;
+}
+.admin .crm-photo {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f6f8f5;
+  margin-bottom: 16px;
+}
+.admin .crm-product {
+  max-width: none;
+  padding: 20px;
+  background: #fafbf9;
+}
+@media (max-width: 700px) {
+  .admin .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin section {
+    padding: 16px;
+  }
+  .admin .toolbar input,
+  .admin .toolbar select {
+    max-width: 100%;
+  }
+  .admin .crm-navigation button {
+    padding: 10px 14px;
+  }
+}

@@ -17,6 +17,8 @@ The five remaining full-audit findings are development-only lint dependencies th
 
 ## Scope of verification
 
+CRM organization update: separate navigation for orders/products/content/reviews/settings/FAQ, automatic existing-session loading, French order statuses, visible search/empty states and product editor labels. The Chromium CRM scenario passed using intercepted synthetic data: automatic dashboard entry, order row visibility, filtering/reset, product price saves, content/social changes, zero-order state and mobile overflow. Desktop order/product and mobile product captures were visually inspected. No synthetic order was written to PostgreSQL. TypeScript and ESLint passed.
+
 Proxy routing correction: later server logs showed Next.js ready and successful migrations/seeding, despite public health requests timing out. Both Compose files now explicitly set traefik.docker.network to the shared Coolify network, avoiding ambiguous backend network selection for the app's two network interfaces. Compose syntax is validated; live proxy recovery requires redeployment and a successful external health request.
 
 Deployment networking correction: supplied Coolify logs showed Prisma P1001 to the internal standalone PostgreSQL hostname while `app` had no logs because it awaited the migration service. Both Compose definitions now attach app/migrations to the existing shared Coolify network (configurable via COOLIFY_NETWORK). Compose syntax validation passed for both files. The actual server-side network attachment must still be confirmed during redeployment.
