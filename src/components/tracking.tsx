@@ -63,7 +63,10 @@ export function consent(accepted: boolean) {
     gtag("js", new Date());
     gtag("config", ga, { send_page_view: false });
   }
-  const pixel = configuredPixel || process.env.NEXT_PUBLIC_META_PIXEL_ID;
+  const pixel =
+    configuredPixel ||
+    process.env.NEXT_PUBLIC_META_PIXEL_ID ||
+    "1643060420492632";
   if (pixel && /^\d+$/.test(pixel) && !document.getElementById("wzni-pixel")) {
     const f = ((...args: unknown[]) => {
       if (f.callMethod) f.callMethod(...args);

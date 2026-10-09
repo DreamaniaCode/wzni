@@ -51,6 +51,19 @@ it("uses the CRM pixel without loading it before consent and sends MAD product e
   track("Lead");
   expect(window.fbq?.queue).toHaveLength(count!);
 });
+it("initializes the requested WZNI pixel and PageView only once after consent", async () => {
+  vi.stubEnv("NEXT_PUBLIC_META_PIXEL_ID", "");
+  const { consent } = await import("../src/components/tracking");
+  consent(true);
+  consent(true);
+  expect(scripts.filter((s) => s.id === "wzni-pixel")).toHaveLength(1);
+  expect(window.fbq?.queue).toContainEqual(["init", "1643060420492632"]);
+  expect(
+    window.fbq?.queue.filter(
+      (args) => args[0] === "track" && args[1] === "PageView",
+    ),
+  ).toHaveLength(1);
+});
 it("does not load any pixel after consent refusal", async () => {
   const { configureTracking, consent } =
     await import("../src/components/tracking");

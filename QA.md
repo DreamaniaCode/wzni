@@ -17,6 +17,8 @@ The five remaining full-audit findings are development-only lint dependencies th
 
 ## Scope of verification
 
+Requested Meta Pixel 1643060420492632 was saved to live CRM settings and configured as the application fallback. All three tracking tests passed, including consent refusal, MAD/product events and exactly one initialization/PageView on repeated acceptance. Meta Events Manager receipt was not inspected because no account access was supplied.
+
 Content organization update: human-readable French field labels and placement descriptions replace raw content keys. Site copy is grouped into home page, usage advice and Google SEO, with character counters and a French search preview. Existing article bodies move to a separate Blog navigation section. The CRM browser scenario passed for grouping, preview, saving both languages, article/site separation and existing management controls; the SEO capture was visually inspected. The homepage metadata now uses the exact saved title rather than appending a price.
 
 CRM organization update: separate navigation for orders/products/content/reviews/settings/FAQ, automatic existing-session loading, French order statuses, visible search/empty states and product editor labels. The Chromium CRM scenario passed using intercepted synthetic data: automatic dashboard entry, order row visibility, filtering/reset, product price saves, content/social changes, zero-order state and mobile overflow. Desktop order/product and mobile product captures were visually inspected. No synthetic order was written to PostgreSQL. TypeScript and ESLint passed.
