@@ -15,6 +15,18 @@ export const orderSchema = z.object({
   product_sku: z.enum(["CB301-SILVER", "CB301-LED", "CB301-BLACK"]),
   quantity: z.number().int().min(1).max(20),
   expected_unit_price: z.number().int().min(1).max(100000).optional(),
+  items: z
+    .array(
+      z.object({
+        sku: z.enum(["CB301-SILVER", "CB301-LED", "CB301-BLACK"]),
+        quantity: z.number().int().min(1).max(20),
+        expected_unit_price: z.number().int().min(1).max(100000),
+      }),
+    )
+    .min(1)
+    .max(3)
+    .refine((items) => new Set(items.map((i) => i.sku)).size === items.length)
+    .optional(),
   locale: z.enum(["fr", "ar"]),
   city: z.literal("Marrakech"),
   website: z.string().max(0),

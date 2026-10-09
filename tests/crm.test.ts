@@ -49,6 +49,45 @@ describe("secure admin credentials", () => {
   });
 });
 describe("CRM mutations", () => {
+  it("returns reserved stock only once when cancelling an order", async () => {
+    const current = {
+      status: "new",
+      stock_reserved: true,
+      items: [
+        { sku: "CB301-BLACK", quantity: 2 },
+        { sku: "CB301-LED", quantity: 1 },
+      ],
+    };
+    const tx = {
+      order: {
+        findUniqueOrThrow: vi.fn(async () => current),
+        updateMany: vi.fn(async () => {
+          current.status = "cancelled";
+          current.stock_reserved = false;
+          return { count: 1 };
+        }),
+      },
+      product: { update: vi.fn(async () => ({})) },
+    };
+    // The database read is a snapshot, independent of the updated row.
+    tx.order.findUniqueOrThrow.mockImplementation(async () => ({ ...current }));
+    mocks.database.mockReturnValue({
+      $transaction: async (fn: (arg: typeof tx) => Promise<void>) => fn(tx),
+    });
+    const req = () =>
+      new Request("http://localhost/api/admin", {
+        method: "PATCH",
+        body: JSON.stringify({
+          type: "status",
+          id: "06bd4554-fc69-4a8b-babc-13837883cc52",
+          status: "cancelled",
+        }),
+      });
+    expect((await PATCH(req())).status).toBe(200);
+    expect(tx.product.update).toHaveBeenCalledTimes(2);
+    expect((await PATCH(req())).status).toBe(200);
+    expect(tx.product.update).toHaveBeenCalledTimes(2);
+  });
   it("persists authorized content changes", async () => {
     const upsert = vi.fn(async () => ({}));
     mocks.database.mockReturnValue({ contentBlock: { upsert } });

@@ -85,7 +85,7 @@ export default function Storefront({
           );
     }),
     [quantity, setQuantity] = useState(1),
-    [cart, setCart] = useState<{ sku: string; quantity: number } | null>(null),
+    [cart, setCart] = useState<{ sku: string; quantity: number }[]>([]),
     [checkoutOpen, setCheckoutOpen] = useState(false),
     [menu, setMenu] = useState(false),
     [chat, setChat] = useState(false),
@@ -93,6 +93,7 @@ export default function Storefront({
     [error, setError] = useState(""),
     [result, setResult] = useState<{
       reference: string;
+      items: { sku: string; quantity: number; name: string }[];
       total: number;
       sku: string;
       quantity: number;
@@ -109,33 +110,40 @@ export default function Storefront({
   const product = products[selected],
     number = store.whatsapp_number || "212783009072";
   const orderProduct =
-    products.find((p) => p.sku === (cart?.sku || result?.sku)) || product;
-  const orderQuantity = cart?.quantity || result?.quantity || 1;
+    products.find((p) => p.sku === (cart[0]?.sku || result?.sku)) || product;
+  const orderQuantity =
+    cart.reduce((n, i) => n + i.quantity, 0) || result?.quantity || 1;
+  const cartTotal = cart.reduce(
+    (n, i) =>
+      n + i.quantity * (products.find((p) => p.sku === i.sku)?.price || 0),
+    0,
+  );
   const addLabel = ar ? "زيد للسلة" : "Ajouter au panier";
   useEffect(() => {
-    let saved: { sku: string; quantity: number } | null = null;
+    let saved: { sku: string; quantity: number }[] = [];
     try {
-      const value = JSON.parse(localStorage.getItem("wzni_cart") || "null");
-      if (
-        value &&
-        visibleSkus.includes(value.sku) &&
-        Number.isInteger(value.quantity) &&
-        value.quantity >= 1 &&
-        value.quantity <= 20
-      )
-        saved = value;
+      const raw = JSON.parse(localStorage.getItem("wzni_cart") || "[]");
+      const values = Array.isArray(raw) ? raw : raw ? [raw] : [];
+      saved = values.filter(
+        (v: { sku: string; quantity: number }, i: number) =>
+          visibleSkus.includes(v.sku) &&
+          values.findIndex((x: { sku: string }) => x.sku === v.sku) === i &&
+          Number.isInteger(v.quantity) &&
+          v.quantity > 0 &&
+          v.quantity <= 20,
+      );
     } catch {
-      /* Ignore invalid or unavailable browser storage. */
+      /* Ignore invalid browser storage. */
     }
     const frame = requestAnimationFrame(() => setCart(saved));
     return () => cancelAnimationFrame(frame);
     // Restore once; prices always come from the current catalog.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  function saveCart(next: { sku: string; quantity: number } | null) {
+  function saveCart(next: { sku: string; quantity: number }[]) {
     setCart(next);
     try {
-      if (next) localStorage.setItem("wzni_cart", JSON.stringify(next));
+      if (next.length) localStorage.setItem("wzni_cart", JSON.stringify(next));
       else localStorage.removeItem("wzni_cart");
     } catch {
       /* The cart remains usable when browser storage is disabled. */
@@ -183,36 +191,54 @@ export default function Storefront({
     setValue("quantity", next);
   }
   function checkout() {
-    const nextQuantity =
-      cart?.sku === product.sku
-        ? Math.min(20, cart.quantity + quantity)
-        : quantity;
-    const added =
-      cart?.sku === product.sku ? nextQuantity - cart.quantity : quantity;
-    saveCart({ sku: product.sku, quantity: nextQuantity });
+    if (!product.active || product.stock < 1) return;
+    const previous = cart.find((i) => i.sku === product.sku)?.quantity || 0;
+    const nextQuantity = Math.min(20, product.stock, previous + quantity);
+    const added = nextQuantity - previous;
+    if (added <= 0) {
+      setError(
+        ar
+          ? "وصلتي للكمية المتوفرة"
+          : "La quantité disponible est déjà dans votre panier.",
+      );
+      return;
+    }
+    saveCart([
+      ...cart.filter((i) => i.sku !== product.sku),
+      { sku: product.sku, quantity: nextQuantity },
+    ]);
     setCheckoutOpen(false);
     setResult(null);
-    if (added > 0)
-      track("AddToCart", {
-        sku: product.sku,
-        quantity: added,
-        value: total(added, product.price),
-      });
+    setError("");
+    track("AddToCart", {
+      sku: product.sku,
+      quantity: added,
+      value: added * product.price,
+    });
     document
       .getElementById("panier")
       ?.scrollIntoView({ behavior: reduced ? "instant" : "smooth" });
     setChat(false);
   }
   function beginCheckout() {
-    if (!cart) return;
+    if (
+      !cart.length ||
+      cart.some(
+        (i) => i.quantity > (products.find((p) => p.sku === i.sku)?.stock || 0),
+      )
+    )
+      return;
     setValue("product_sku", orderProduct.sku);
-    setValue("quantity", orderQuantity);
+    setValue("quantity", cart[0].quantity);
     setCheckoutOpen(true);
     setError("");
     track("InitiateCheckout", {
       sku: orderProduct.sku,
       quantity: orderQuantity,
-      value: total(orderQuantity, orderProduct.price),
+      value: cartTotal,
+      content_ids: cart.map((i) => i.sku),
+      content_type: "product",
+      contents: cart.map((i) => ({ id: i.sku, quantity: i.quantity })),
     });
     requestAnimationFrame(() =>
       document
@@ -222,7 +248,7 @@ export default function Storefront({
     setChat(false);
   }
   async function submit(data: OrderInput) {
-    if (!cart || !checkoutOpen) return;
+    if (!cart.length || !checkoutOpen) return;
     setError("");
     if (!key.current) key.current = crypto.randomUUID();
     const utm = new URLSearchParams(window.location.search);
@@ -233,7 +259,11 @@ export default function Storefront({
         body: JSON.stringify({
           ...data,
           product_sku: orderProduct.sku,
-          quantity: orderQuantity,
+          quantity: cart[0].quantity,
+          items: cart.map((i) => ({
+            ...i,
+            expected_unit_price: products.find((p) => p.sku === i.sku)!.price,
+          })),
           expected_unit_price: orderProduct.price,
           idempotency_key: key.current,
           utm_source: utm.get("utm_source")?.slice(0, 100) || undefined,
@@ -243,11 +273,15 @@ export default function Storefront({
       });
       const body = await response.json();
       if (!response.ok) {
-        if (body.error === "PRICE_CHANGED") {
+        if (
+          ["PRICE_CHANGED", "OUT_OF_STOCK", "PRODUCT_UNAVAILABLE"].includes(
+            body.error,
+          )
+        ) {
           setError(
             ar
               ? "الثمن تبدل. عاود حدّث الصفحة قبل الطلب."
-              : "Le prix a changé. Actualisez la page avant de commander.",
+              : "Le prix ou le stock a changé. Actualisez la page pour vérifier votre panier.",
           );
           return;
         }
@@ -256,9 +290,22 @@ export default function Storefront({
         );
         return;
       }
-      setResult({ ...body, sku: orderProduct.sku, quantity: orderQuantity });
-      track("Lead", { sku: orderProduct.sku, value: body.total });
-      saveCart(null);
+      setResult({
+        ...body,
+        sku: orderProduct.sku,
+        quantity: orderQuantity,
+        items: cart.map((i) => ({
+          ...i,
+          name: products.find((p) => p.sku === i.sku)!.name,
+        })),
+      });
+      track("Lead", {
+        content_ids: cart.map((i) => i.sku),
+        content_type: "product",
+        contents: cart.map((i) => ({ id: i.sku, quantity: i.quantity })),
+        value: body.total,
+      });
+      saveCart([]);
       key.current = "";
     } catch {
       setError(t.failed);
@@ -289,15 +336,41 @@ export default function Storefront({
   const available = products
     .map((p, i) => ({ p, i }))
     .filter(({ p }) => visibleSkus.includes(p.sku));
-  const link = whatsapp(
-    cart || result ? orderProduct.sku : product.sku,
-    cart || result ? orderQuantity : quantity,
-    locale,
-    number,
-    result?.reference,
-    cart || result ? orderProduct.price : product.price,
-    cart || result ? orderProduct.name : product.name,
-  );
+  const link = result
+    ? "https://wa.me/" +
+      number +
+      "?text=" +
+      encodeURIComponent(
+        "WZNI " +
+          result.reference +
+          "\n" +
+          result.items.map((i) => i.name + " × " + i.quantity).join("\n") +
+          "\n" +
+          result.total +
+          " MAD",
+      )
+    : cart.length
+      ? "https://wa.me/" +
+        number +
+        "?text=" +
+        encodeURIComponent(
+          (ar ? "طلبي WZNI" : "Ma commande WZNI") +
+            "\n" +
+            cart.map((i) => i.sku + " × " + i.quantity).join("\n") +
+            "\n" +
+            cartTotal +
+            " MAD",
+        )
+      : whatsapp(
+          product.sku,
+          quantity,
+          locale,
+          number,
+          undefined,
+          product.price,
+          product.name,
+        );
+
   return (
     <div
       className="store-root"
@@ -352,7 +425,8 @@ export default function Storefront({
                 ?.scrollIntoView({ behavior: "smooth" })
             }
           >
-            {ar ? "السلة" : "Panier"} ({cart?.quantity || 0})
+            {ar ? "السلة" : "Panier"} (
+            {cart.reduce((n, i) => n + i.quantity, 0)})
             <ArrowUpRight size={16} />
           </Button>
           <button
@@ -392,8 +466,13 @@ export default function Storefront({
               </div>
             </div>
             <div className="hero-buttons">
-              <Button onClick={checkout}>
-                {addLabel}
+              <Button onClick={checkout} disabled={product.stock < 1}>
+                {/* Stock checked again on the server. */}
+                {product.stock < 1
+                  ? ar
+                    ? "نفد المخزون"
+                    : "Rupture de stock"
+                  : addLabel}
                 <ArrowUpRight size={18} />
               </Button>
               <a className="text-link" href="#modeles">
@@ -501,6 +580,13 @@ export default function Storefront({
                   <h3>{p.name}</h3>
                   <p className="product-description">
                     {ar ? p.descriptionAr : p.descriptionFr}
+                  </p>
+                  <p>
+                    {p.stock > 0
+                      ? (ar ? "المتوفر: " : "En stock : ") + p.stock
+                      : ar
+                        ? "نفد المخزون"
+                        : "Rupture de stock"}
                   </p>
                   <div className="product-price">
                     <strong>
@@ -625,12 +711,23 @@ export default function Storefront({
                 </button>
               ))}
             </div>
+            <p>
+              {product.stock > 0
+                ? (ar ? "المتوفر: " : "En stock : ") + product.stock
+                : ar
+                  ? "نفد المخزون"
+                  : "Rupture de stock"}
+            </p>
             <div className="gallery-offer">
               <strong>{product.price} DH</strong>
               <span>{t.delivery}</span>
             </div>
             <Button onClick={checkout}>
-              {addLabel}
+              {product.stock < 1
+                ? ar
+                  ? "نفد المخزون"
+                  : "Rupture de stock"
+                : addLabel}
               <ArrowUpRight size={18} />
             </Button>
           </div>
@@ -667,69 +764,99 @@ export default function Storefront({
         <section id="panier" className="section cart-section">
           <div className="eyebrow">01 · {ar ? "السلة" : "Votre panier"}</div>
           <h2>{ar ? "راجع اختيارك" : "Votre sélection, en un coup d’œil"}</h2>
-          {cart ? (
-            <div className="cart-card">
-              <Image
-                src={orderProduct.image}
-                alt={orderProduct.name}
-                width={240}
-                height={160}
-              />
-              <div>
-                <h3>{orderProduct.name}</h3>
-                <p>
-                  {orderProduct.sku} · {orderProduct.price} DH
-                </p>
-                <label>
-                  {t.quantity}
-                  <input
-                    aria-label={
-                      ar ? "عدد المنتجات فالسلة" : "Quantité dans le panier"
-                    }
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={orderQuantity}
-                    onChange={(e) => {
-                      const q = Number(e.target.value);
-                      if (Number.isInteger(q) && q >= 1 && q <= 20) {
-                        saveCart({ ...cart, quantity: q });
-                        setCheckoutOpen(false);
-                      }
-                    }}
-                  />
-                </label>
-                <button
-                  className="text-link"
-                  onClick={() => {
-                    saveCart(null);
-                    setCheckoutOpen(false);
-                  }}
-                >
-                  {ar ? "حيد من السلة" : "Retirer du panier"}
-                </button>
+          {cart.length ? (
+            <>
+              {cart.map((item) => {
+                const p = products.find((p) => p.sku === item.sku)!;
+                return (
+                  <div className="cart-card" key={item.sku}>
+                    <Image
+                      src={p.image}
+                      alt={p.name}
+                      width={240}
+                      height={160}
+                    />
+                    <div>
+                      <h3>{p.name}</h3>
+                      <p>
+                        {p.sku} · {p.price} DH
+                      </p>
+                      <p
+                        className={p.stock < item.quantity ? "form-error" : ""}
+                      >
+                        {p.stock < 1
+                          ? ar
+                            ? "نفد المخزون"
+                            : "Rupture de stock"
+                          : (ar ? "المتوفر: " : "Disponible : ") + p.stock}
+                      </p>
+                      <label>
+                        {t.quantity}
+                        <input
+                          aria-label={(ar ? "العدد " : "Quantité ") + p.name}
+                          type="number"
+                          min={1}
+                          max={Math.min(20, p.stock)}
+                          value={item.quantity}
+                          onChange={(e) => {
+                            const q = Number(e.target.value);
+                            if (
+                              Number.isInteger(q) &&
+                              q > 0 &&
+                              q <= Math.min(20, p.stock)
+                            ) {
+                              saveCart(
+                                cart.map((i) =>
+                                  i.sku === p.sku ? { ...i, quantity: q } : i,
+                                ),
+                              );
+                              setCheckoutOpen(false);
+                            }
+                          }}
+                        />
+                      </label>
+                      <button
+                        className="text-link"
+                        onClick={() => {
+                          saveCart(cart.filter((i) => i.sku !== p.sku));
+                          setCheckoutOpen(false);
+                        }}
+                      >
+                        {ar ? "حيد من السلة" : "Retirer du panier"}
+                      </button>
+                    </div>
+                    <strong>{item.quantity * p.price} DH</strong>
+                  </div>
+                );
+              })}
+              <div className="summary-total">
+                <span>{t.total}</span>
+                <strong>{cartTotal} DH</strong>
               </div>
-              <div>
-                <strong>{total(orderQuantity, orderProduct.price)} DH</strong>
-                <p>{t.delivery}</p>
-                <Button onClick={beginCheckout}>
-                  {ar ? "كمّل الطلب" : "Passer à la commande"}
-                  <ArrowRight size={18} />
-                </Button>
-              </div>
-            </div>
+              <p>{t.delivery}</p>
+              <Button
+                onClick={beginCheckout}
+                disabled={cart.some(
+                  (i) =>
+                    i.quantity >
+                    (products.find((p) => p.sku === i.sku)?.stock || 0),
+                )}
+              >
+                {ar ? "كمّل الطلب" : "Passer à la commande"}
+              </Button>
+            </>
           ) : (
             <p>
               {ar
-                ? "السلة خاوية. اختار الموديل وزيدو للسلة."
-                : "Votre panier est vide. Choisissez un modèle et ajoutez-le au panier."}
+                ? "السلة خاوية. اختار المنتجات."
+                : "Votre panier est vide. Choisissez vos produits."}
             </p>
           )}
-          <p>
-            {ar
-              ? "موديل واحد فالطلب، بالعدد اللي بغيتي. إضافة موديل آخر كتبدل الاختيار."
-              : "Un modèle par commande, dans la quantité souhaitée. Ajouter un autre modèle remplace votre sélection."}
-          </p>
+          {error && !checkoutOpen && (
+            <p role="alert" className="form-error">
+              {error}
+            </p>
+          )}
           <a className="text-link" href="#modeles">
             {ar ? "شوف الموديلات" : "Continuer mes achats"}
           </a>
@@ -749,6 +876,12 @@ export default function Storefront({
               <Check size={32} />
               <h3>{t.success}</h3>
               <strong>{result.reference}</strong>
+              {result.items.map((i) => (
+                <p key={i.sku}>
+                  {i.name} × {i.quantity}
+                </p>
+              ))}
+              <strong>{result.total} DH</strong>
               <p>{t.successText}</p>
               <a
                 className="button"
@@ -812,7 +945,12 @@ export default function Storefront({
                   </label>
                   <label>
                     {t.model}
-                    <input value={orderProduct.name} readOnly />
+                    <input
+                      value={cart
+                        .map((i) => products.find((p) => p.sku === i.sku)?.name)
+                        .join(" + ")}
+                      readOnly
+                    />
                   </label>
                 </div>
                 {custom && (
@@ -877,29 +1015,32 @@ export default function Storefront({
                 >
                   {ar ? "بدّل السلة" : "Modifier le panier"}
                 </button>
-                <Image
-                  src={orderProduct.image}
-                  alt={orderProduct.name}
-                  width={360}
-                  height={240}
-                />
-                <h3>{orderProduct.name}</h3>
-                <p className="sku">{orderProduct.sku}</p>
+                {cart.map((i) => (
+                  <div className="summary-line" key={i.sku}>
+                    <span>
+                      {products.find((p) => p.sku === i.sku)?.name} ×{" "}
+                      {i.quantity}
+                    </span>
+                    <strong>
+                      {i.quantity *
+                        (products.find((p) => p.sku === i.sku)?.price ||
+                          0)}{" "}
+                      DH
+                    </strong>
+                  </div>
+                ))}
                 <div className="summary-line">
                   <span>{t.quantity}</span>
                   <span>{orderQuantity}</span>
                 </div>
-                <div className="summary-line">
-                  <span>{t.unit}</span>
-                  <span>{orderProduct.price} DH</span>
-                </div>
+
                 <div className="summary-line">
                   <span>{t.shipping}</span>
                   <span className="green">{t.free}</span>
                 </div>
                 <div className="summary-total">
                   <span>{t.total}</span>
-                  <strong>{total(orderQuantity, orderProduct.price)} DH</strong>
+                  <strong>{cartTotal} DH</strong>
                 </div>
                 <div className="summary-city">
                   <MapPin size={15} />
@@ -953,7 +1094,11 @@ export default function Storefront({
           <h2>{t.closing}</h2>
           <p>{t.closingText}</p>
           <Button onClick={checkout}>
-            {addLabel}
+            {product.stock < 1
+              ? ar
+                ? "نفد المخزون"
+                : "Rupture de stock"
+              : addLabel}
             <ArrowUpRight size={18} />
           </Button>
         </section>
@@ -1018,7 +1163,11 @@ export default function Storefront({
           <small>{t.delivery}</small>
         </span>
         <Button onClick={checkout}>
-          {addLabel}
+          {product.stock < 1
+            ? ar
+              ? "نفد المخزون"
+              : "Rupture de stock"
+            : addLabel}
           <ArrowUpRight size={16} />
         </Button>
       </div>
@@ -1071,7 +1220,13 @@ export default function Storefront({
             >
               {t.models}
             </button>
-            <button onClick={checkout}>{addLabel}</button>
+            <button onClick={checkout}>
+              {product.stock < 1
+                ? ar
+                  ? "نفد المخزون"
+                  : "Rupture de stock"
+                : addLabel}
+            </button>
             <button onClick={() => ask(t.priceAction)}>{t.priceAction}</button>
             <button onClick={() => ask(t.deliveryAction)}>
               {t.deliveryAction}

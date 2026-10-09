@@ -40,7 +40,7 @@ export function track(name: string, data: Record<string, unknown> = {}) {
   const pixelData = {
     ...data,
     ...(typeof data.value === "number" ? { currency: "MAD" } : {}),
-    ...(typeof data.sku === "string"
+    ...(typeof data.sku === "string" && !Array.isArray(data.content_ids)
       ? { content_ids: [data.sku], content_type: "product" }
       : {}),
   };

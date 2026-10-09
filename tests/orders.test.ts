@@ -32,7 +32,7 @@ function request(value: unknown = payload) {
   });
 }
 function fakeDb(existing: unknown = null, unitPrice = 120) {
-  return {
+  const db = {
     order: {
       findUnique: vi.fn(async () => existing),
       create: vi.fn(async () => ({
@@ -41,13 +41,20 @@ function fakeDb(existing: unknown = null, unitPrice = 120) {
       })),
     },
     product: {
+      updateMany: vi.fn(async () => ({ count: 1 })),
       findUnique: vi.fn(async () => ({
         sku: "CB301-BLACK",
         price_mad: unitPrice,
         active: true,
+        stock_quantity: 25,
+        name: "PRIMA BLACK",
       })),
     },
     storeSettings: { findUnique: vi.fn(async () => ({ cod_enabled: false })) },
+  };
+  return {
+    ...db,
+    $transaction: async (fn: (tx: typeof db) => Promise<unknown>) => fn(db),
   };
 }
 beforeEach(() => {
@@ -56,6 +63,39 @@ beforeEach(() => {
   mocks.rateLimit.mockResolvedValue(true);
 });
 describe("Prisma order submission", () => {
+  it("rejects an exhausted stock before creating an order", async () => {
+    const db = fakeDb();
+    db.product.updateMany.mockResolvedValue({ count: 0 });
+    mocks.database.mockReturnValue(db);
+    const response = await POST(request());
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: "OUT_OF_STOCK" });
+    expect(db.order.create).not.toHaveBeenCalled();
+  });
+  it("reserves each line and calculates the multi-product total on the server", async () => {
+    const db = fakeDb();
+    mocks.database.mockReturnValue(db);
+    await POST(
+      request({
+        ...payload,
+        items: [
+          { sku: "CB301-BLACK", quantity: 2, expected_unit_price: 120 },
+          { sku: "CB301-LED", quantity: 3, expected_unit_price: 120 },
+        ],
+      }),
+    );
+    expect(db.product.updateMany).toHaveBeenCalledTimes(2);
+    expect(db.order.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        quantity: 5,
+        total_mad: 600,
+        stock_reserved: true,
+        items: expect.arrayContaining([
+          expect.objectContaining({ sku: "CB301-LED", quantity: 3 }),
+        ]),
+      }),
+    });
+  });
   it("uses server price, normalizes phone and returns persisted reference", async () => {
     const db = fakeDb();
     mocks.database.mockReturnValue(db);

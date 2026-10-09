@@ -110,6 +110,7 @@ export async function publicData() {
               name: row.name,
               image: row.image_path,
               price: row.price_mad,
+              stock: row.stock_quantity,
               descriptionFr: row.description_fr,
               descriptionAr: row.description_ar,
               colorHex: row.color_hex,

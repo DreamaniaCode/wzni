@@ -15,6 +15,12 @@ type Order = {
   district: string;
   product_sku: string;
   quantity: number;
+  items?: {
+    sku: string;
+    quantity: number;
+    unit_price_mad: number;
+    name?: string;
+  }[];
   total_mad: number;
   status: string;
   created_at: string;
@@ -144,7 +150,12 @@ export default function Admin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!response.ok) throw new Error("Modification refusée.");
+      if (!response.ok)
+        throw new Error(
+          response.status === 409
+            ? "Le stock a changé entre-temps. Actualisez le CRM avant de réessayer."
+            : "Modification refusée. Vérifiez le statut de la commande.",
+        );
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur réseau.");
@@ -175,6 +186,7 @@ export default function Admin() {
       "district",
       "delivery_address",
       "product_sku",
+      "items",
       "quantity",
       "total_mad",
       "status",
@@ -189,7 +201,27 @@ export default function Admin() {
       "\uFEFF" +
       [
         keys.map(escape).join(","),
-        ...rows.map((o) => keys.map((k) => escape(o[k])).join(",")),
+        ...rows.map((o) =>
+          keys
+            .map((k) =>
+              escape(
+                k === "items"
+                  ? o.items
+                      ?.map(
+                        (i) =>
+                          i.sku +
+                          " x " +
+                          i.quantity +
+                          " @ " +
+                          i.unit_price_mad +
+                          " MAD",
+                      )
+                      .join("; ")
+                  : o[k],
+              ),
+            )
+            .join(","),
+        ),
       ].join("\r\n");
     const url = URL.createObjectURL(
       new Blob([content], { type: "text/csv;charset=utf-8" }),
@@ -388,13 +420,25 @@ export default function Admin() {
                         <br />
                         {o.delivery_notes}
                       </td>
-                      <td>{o.product_sku}</td>
+                      <td>
+                        {o.items?.length
+                          ? o.items.map((i) => (
+                              <div key={i.sku}>
+                                {i.name || i.sku} × {i.quantity} ·{" "}
+                                {i.unit_price_mad * i.quantity} DH
+                              </div>
+                            ))
+                          : o.product_sku}
+                      </td>
                       <td>{o.quantity}</td>
                       <td>{o.total_mad} DH</td>
                       <td>
                         <select
                           aria-label={`Statut ${o.public_reference}`}
-                          disabled={busy}
+                          disabled={
+                            busy ||
+                            ["cancelled", "delivered"].includes(o.status)
+                          }
                           value={o.status}
                           onChange={(e) =>
                             mutate({
@@ -404,11 +448,23 @@ export default function Admin() {
                             })
                           }
                         >
-                          {statuses.map((s) => (
-                            <option key={s} value={s}>
-                              {statusLabels[s]}
-                            </option>
-                          ))}
+                          {statuses
+                            .filter(
+                              (s) =>
+                                s === o.status ||
+                                (
+                                  {
+                                    new: ["confirmed", "cancelled"],
+                                    confirmed: ["in_delivery", "cancelled"],
+                                    in_delivery: ["delivered", "cancelled"],
+                                  } as Record<string, string[]>
+                                )[o.status]?.includes(s),
+                            )
+                            .map((s) => (
+                              <option key={s} value={s}>
+                                {statusLabels[s]}
+                              </option>
+                            ))}
                         </select>
                       </td>
                       <td>

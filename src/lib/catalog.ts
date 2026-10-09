@@ -10,6 +10,7 @@ export const products = [
     colorFr: "Argenté",
     colorAr: "فضي",
     active: true,
+    stock: 0,
   },
   {
     sku: "CB301-LED",
@@ -22,6 +23,7 @@ export const products = [
     colorFr: "Argenté / noir",
     colorAr: "فضي / أسود",
     active: true,
+    stock: 0,
   },
   {
     sku: "CB301-BLACK",
@@ -34,6 +36,7 @@ export const products = [
     colorFr: "Noir",
     colorAr: "أسود",
     active: true,
+    stock: 0,
   },
 ] as const;
 export type Product = {
@@ -47,6 +50,7 @@ export type Product = {
   colorFr: string;
   colorAr: string;
   active: boolean;
+  stock: number;
 };
 export type Locale = "fr" | "ar";
 export const districts = [

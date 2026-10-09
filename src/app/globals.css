@@ -2177,6 +2177,11 @@ html[lang="ar"] body {
 .cart-section {
   scroll-margin-top: 100px;
 }
+.cart-section > .text-link {
+  display: inline-block;
+  margin-inline-start: 20px;
+  margin-block: 16px;
+}
 .cart-card {
   display: grid;
   grid-template-columns: 180px 1fr auto;

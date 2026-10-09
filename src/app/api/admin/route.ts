@@ -52,6 +52,8 @@ const mutation = z.discriminatedUnion("type", [
     sku: z.enum(["CB301-SILVER", "CB301-LED", "CB301-BLACK"]),
     name: z.string().trim().min(2).max(100),
     price_mad: z.number().int().min(1).max(100000),
+    stock_quantity: z.number().int().min(0).max(100000).optional(),
+    expected_stock_quantity: z.number().int().min(0).optional(),
     image_path: z
       .string()
       .regex(
@@ -111,12 +113,9 @@ export async function GET() {
         where: { status: "delivered" },
         _sum: { total_mad: true },
       }),
-      db.order.groupBy({
-        by: ["product_sku"],
+      db.order.findMany({
         where: { status: "delivered" },
-        _sum: { quantity: true },
-        orderBy: { _sum: { quantity: "desc" } },
-        take: 1,
+        select: { items: true, product_sku: true, quantity: true },
       }),
     ]);
     return NextResponse.json(
@@ -130,7 +129,18 @@ export async function GET() {
         overview: {
           counts: counts.map((c) => ({ status: c.status, count: c._count })),
           revenue: revenue._sum.total_mad || 0,
-          best: best[0]?.product_sku || "—",
+          best:
+            Object.entries(
+              best.reduce((totals: Record<string, number>, o) => {
+                const items =
+                  Array.isArray(o.items) && o.items.length
+                    ? (o.items as { sku: string; quantity: number }[])
+                    : [{ sku: o.product_sku, quantity: o.quantity }];
+                for (const i of items)
+                  totals[i.sku] = (totals[i.sku] || 0) + i.quantity;
+                return totals;
+              }, {}),
+            ).sort((a, b) => b[1] - a[1])[0]?.[0] || "—",
         },
         ai_configured: !!(
           process.env.AI_API_KEY &&
@@ -159,12 +169,41 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "INPUT" }, { status: 400 });
     const db = database();
     switch (parsed.data.type) {
-      case "status":
-        await db.order.update({
-          where: { id: parsed.data.id },
-          data: { status: parsed.data.status },
+      case "status": {
+        const { id, status } = parsed.data;
+        await db.$transaction(async (tx) => {
+          const current = await tx.order.findUniqueOrThrow({ where: { id } });
+          if (current.status === status) return;
+          const transitions: Record<string, string[]> = {
+            new: ["confirmed", "cancelled"],
+            confirmed: ["in_delivery", "cancelled"],
+            in_delivery: ["delivered", "cancelled"],
+          };
+          if (!transitions[current.status]?.includes(status))
+            throw new Error("INVALID_STATUS_TRANSITION");
+          if (current.status === "cancelled" || current.status === "delivered")
+            throw new Error("FINAL_STATUS");
+          const updated = await tx.order.updateMany({
+            where: { id, status: current.status },
+            data: {
+              status,
+              ...(status === "cancelled" ? { stock_reserved: false } : {}),
+            },
+          });
+          if (updated.count !== 1) throw new Error("CONCURRENT_UPDATE");
+          if (status === "cancelled" && current.stock_reserved) {
+            const items = current.items as { sku: string; quantity: number }[];
+            for (const item of [...items].sort((a, b) =>
+              a.sku.localeCompare(b.sku),
+            ))
+              await tx.product.update({
+                where: { sku: item.sku },
+                data: { stock_quantity: { increment: item.quantity } },
+              });
+          }
         });
         break;
+      }
       case "settings": {
         const { type, ...settings } = parsed.data;
         void type;
@@ -172,9 +211,30 @@ export async function PATCH(request: Request) {
         break;
       }
       case "product": {
-        const { type, sku, ...product } = parsed.data;
+        const { type, sku, expected_stock_quantity, ...product } = parsed.data;
         void type;
-        await db.product.update({ where: { sku }, data: product });
+        if (
+          product.stock_quantity !== undefined &&
+          expected_stock_quantity === undefined
+        )
+          return NextResponse.json(
+            { error: "STOCK_REFRESH_REQUIRED" },
+            { status: 409 },
+          );
+        const changed = await db.product.updateMany({
+          where: {
+            sku,
+            ...(product.stock_quantity !== undefined
+              ? { stock_quantity: expected_stock_quantity }
+              : {}),
+          },
+          data: product,
+        });
+        if (changed.count !== 1)
+          return NextResponse.json(
+            { error: "STOCK_CHANGED_REFRESH" },
+            { status: 409 },
+          );
         break;
       }
       case "faq": {

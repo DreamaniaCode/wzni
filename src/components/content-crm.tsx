@@ -10,6 +10,7 @@ export type ManagedProduct = {
   sku: string;
   name: string;
   price_mad: number;
+  stock_quantity: number;
   image_path: string;
   description_fr: string;
   description_ar: string;
@@ -76,7 +77,11 @@ function ProductEditor({
       className="crm-product"
       onSubmit={(e) => {
         e.preventDefault();
-        save({ type: "product", ...draft });
+        save({
+          type: "product",
+          ...draft,
+          expected_stock_quantity: product.stock_quantity,
+        });
       }}
     >
       <div className="crm-photo">
@@ -124,6 +129,26 @@ function ProductEditor({
           }
         />
       </label>
+      <label>
+        Stock disponible
+        <input
+          type="number"
+          min={0}
+          max={100000}
+          required
+          value={draft.stock_quantity ?? 0}
+          onChange={(e) =>
+            setDraft({ ...draft, stock_quantity: Number(e.target.value) })
+          }
+        />
+      </label>
+      <p>
+        {draft.stock_quantity === 0
+          ? "Rupture de stock"
+          : draft.stock_quantity <= 5
+            ? "Stock faible — prévoir un réapprovisionnement"
+            : "En stock"}
+      </p>
       {(["description_fr", "description_ar"] as const).map((key) => (
         <label key={key}>
           {key === "description_fr"
