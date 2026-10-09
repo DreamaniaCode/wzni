@@ -1,12 +1,16 @@
 import "dotenv/config";
 import { database } from "../src/lib/prisma";
 import { hashPassword } from "../src/lib/password";
-const email = process.env.ADMIN_EMAIL?.trim().toLowerCase(),
+import { adminIdentifier } from "../src/lib/admin-login";
+const identifier = adminIdentifier.safeParse(
+    process.env.ADMIN_USERNAME || process.env.ADMIN_EMAIL,
+  ),
   password = process.env.ADMIN_PASSWORD;
-if (!email || !password || password.length < 12)
+if (!identifier.success || !password || password.length < 12)
   throw new Error(
-    "Set ADMIN_EMAIL and ADMIN_PASSWORD (at least 12 characters) for this command only.",
+    "Set ADMIN_USERNAME (or ADMIN_EMAIL) and ADMIN_PASSWORD (at least 12 characters) for this command only.",
   );
+const email = identifier.data;
 const db = database();
 await db.adminUser.upsert({
   where: { email },

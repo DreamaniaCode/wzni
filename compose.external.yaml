@@ -1,0 +1,45 @@
+# Use with the existing Coolify PostgreSQL resource.
+# Enable Coolify's predefined network connection for this application.
+services:
+  migrate:
+    build:
+      context: .
+      target: migration
+    restart: "no"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set the internal PostgreSQL connection URL}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-wzni}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    command:
+      - sh
+      - -c
+      - 'npm run db:deploy && npm run db:seed && if [ -n "$$ADMIN_PASSWORD" ]; then npm run db:admin; fi'
+  app:
+    build:
+      context: .
+      target: runtime
+      args:
+        NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-}
+        NEXT_PUBLIC_META_PIXEL_ID: ${NEXT_PUBLIC_META_PIXEL_ID:-}
+    restart: unless-stopped
+    expose: ["3000"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set the internal PostgreSQL connection URL}
+      SITE_URL: ${SITE_URL:-https://wzni.myskillscloud.com}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://wzni.myskillscloud.com}
+      AI_API_URL: ${AI_API_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+    volumes:
+      - product-uploads:/app/data/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://127.0.0.1:3000/api/health").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+volumes:
+  product-uploads:

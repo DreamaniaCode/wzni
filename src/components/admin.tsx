@@ -176,10 +176,10 @@ export default function Admin() {
         <>
           <form onSubmit={login}>
             <label>
-              Email
+              Identifiant ou email
               <input
                 name="email"
-                type="email"
+                type="text"
                 required
                 autoComplete="username"
               />

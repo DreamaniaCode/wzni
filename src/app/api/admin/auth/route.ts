@@ -8,13 +8,14 @@ import {
   endSession,
 } from "@/lib/server";
 import { verifyPassword } from "@/lib/password";
+import { adminIdentifier } from "@/lib/admin-login";
 export async function POST(request: Request) {
   if (!sameOrigin(request))
     return NextResponse.json({ error: "ORIGIN" }, { status: 403 });
   try {
     const parsed = z
       .object({
-        email: z.email().max(200),
+        email: adminIdentifier,
         password: z.string().min(1).max(200),
       })
       .safeParse(await request.json());

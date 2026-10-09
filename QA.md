@@ -27,4 +27,6 @@ Local Docker is installed but its Linux daemon was stopped. No full Docker image
 
 ## Before commercial launch
 
+Live PostgreSQL setup subsequently completed using the user-provided public endpoint: all three migrations applied to the initially empty database, the catalog/content/FAQ seed completed, and the requested administrator was created with a salted password hash. A temporary local production server connected to that database successfully authenticated the username, read the protected CRM (3 products, 20 content blocks, 7 FAQs and configured Facebook/Instagram links), then logged out and deleted its verification session. Username/email authentication regressions bring the unit/API suite to 38 passing tests; TypeScript, ESLint, production build and external Compose syntax validation also passed. Coolify runtime environment changes and redeployment still require authenticated dashboard access.
+
 Follow the Coolify instructions in README, create the administrator, test persisted orders and reviews on staging, verify uploaded photos survive a redeploy, and back up both database and media volumes. Complete merchant identity, retention and return/retraction terms. Fill the real social-page URLs, keep color descriptions faithful to product photos, and activate COD only if offered.

@@ -15,7 +15,7 @@ npm run db:admin
 npm run dev
 ```
 
-The admin command requires `ADMIN_EMAIL` and a unique `ADMIN_PASSWORD` of at least 12 characters. Supply the password for that command only, then remove it. Passwords use salted scrypt hashes. Admin sessions use random tokens stored as hashes in PostgreSQL; cookies are HttpOnly, SameSite=Lax and Secure in production. No public registration or hardcoded credential exists.
+The admin command requires `ADMIN_USERNAME` (for example `wzni`, or `ADMIN_EMAIL` for an email login) and a unique `ADMIN_PASSWORD` of at least 12 characters. Supply the password for that command only, then remove it. Passwords use salted scrypt hashes. Admin sessions use random tokens stored as hashes in PostgreSQL; cookies are HttpOnly, SameSite=Lax and Secure in production. No public registration or hardcoded credential exists.
 
 Without a database, the storefront displays catalog defaults but checkout/review submission fails honestly. It never fabricates an order reference or a saved review.
 
@@ -61,6 +61,14 @@ Run `npm run db:maintenance` in the migration image periodically to delete expir
 References: [Prisma v7 Docker](https://www.prisma.io/docs/guides/v7/deployment/docker), [Coolify Git-based Compose](https://next.coolify.io/docs/applications/builds/docker-compose).
 
 ## Environment and optional integrations
+
+### Existing internal Coolify PostgreSQL
+
+Select `compose.external.yaml` instead of `compose.yaml` to use the existing PostgreSQL resource. Enable **Connect to Predefined Network** so its internal hostname resolves. Set `DATABASE_URL` to the supplied internal URL in Coolify's environment editor; do not commit it. Set `ADMIN_USERNAME=wzni` and temporarily set `ADMIN_PASSWORD` to the requested password for the first deployment. The migration service applies all table migrations, seeds catalog/content without overwriting CRM changes, then creates/updates the administrator with a salted hash. The app starts only after setup succeeds.
+
+After successful setup, remove `ADMIN_PASSWORD` and redeploy to remove it from the migration container environment. Later deployments apply migrations and seed safely without changing the admin password. The app service never receives `ADMIN_PASSWORD`. Back up the existing PostgreSQL resource separately; this Compose file creates no database container.
+
+For manual setup inside the migration image or a Node 24 repository checkout on the server, set `DATABASE_URL`, `ADMIN_USERNAME=wzni` and temporarily `ADMIN_PASSWORD`, then run `npm run db:deploy`, `npm run db:seed`, and `npm run db:admin`. This requires access to the private Coolify network; the internal hostname is not reachable from a normal workstation.
 
 Required: `DATABASE_URL`; production `SITE_URL` / `NEXT_PUBLIC_SITE_URL`. Compose also requires `POSTGRES_PASSWORD`. `ADMIN_EMAIL` / `ADMIN_PASSWORD` are one-off setup inputs.
 
