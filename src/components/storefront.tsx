@@ -35,7 +35,7 @@ import {
 } from "@/lib/catalog";
 import { orderSchema, type OrderInput } from "@/lib/validation";
 import { Button } from "./ui/button";
-import { track, consent, configureTracking } from "./tracking";
+import { track, consent, restoreTracking } from "./tracking";
 import BrandLogo from "./brand-logo";
 import CustomerReviews, { type PublicReview } from "./customer-reviews";
 import StoreExtras, { SocialLinks } from "./store-extras";
@@ -100,15 +100,19 @@ export default function Storefront({
     >([{ role: "assistant", text: t.welcome }]),
     [question, setQuestion] = useState(""),
     [typing, setTyping] = useState(false),
-    [cookie, setCookie] = useState(true);
+    [cookie, setCookie] = useState(false);
   const swipe = useRef(0),
     key = useRef("");
   const product = products[selected],
     number = store.whatsapp_number || "212783009072";
   useEffect(() => {
-    configureTracking(store.meta_pixel_id);
-    if (localStorage.getItem("wzni_consent") === "yes") consent(true);
-  }, [store.meta_pixel_id]);
+    const hasChoice = restoreTracking(store.meta_pixel_id, {
+      sku: product.sku,
+      value: product.price,
+    });
+    const frame = requestAnimationFrame(() => setCookie(!hasChoice));
+    return () => cancelAnimationFrame(frame);
+  }, [store.meta_pixel_id, product.sku, product.price]);
   const {
     register,
     handleSubmit,
@@ -131,6 +135,11 @@ export default function Storefront({
     setSelected(index);
     setValue("product_sku", products[index].sku);
     track("SelectProduct", { sku: products[index].sku });
+    if (index !== selected)
+      track("ViewContent", {
+        sku: products[index].sku,
+        value: products[index].price,
+      });
   }
   function qty(value: number) {
     const next = Math.max(1, Math.min(20, value));
@@ -992,7 +1001,7 @@ export default function Storefront({
           <p>{t.cookie}</p>
           <button
             onClick={() => {
-              consent(true);
+              consent(true, { sku: product.sku, value: product.price });
               setCookie(false);
             }}
           >

@@ -72,3 +72,32 @@ it("does not load any pixel after consent refusal", async () => {
   expect(scripts).toHaveLength(0);
   expect(window.fbq).toBeUndefined();
 });
+
+it("restores accepted consent automatically and sends a catalog-matching product view", async () => {
+  localStorage.setItem("wzni_consent", "yes");
+  const { restoreTracking } = await import("../src/components/tracking");
+  expect(
+    restoreTracking("1643060420492632", { sku: "CB301-BLACK", value: 120 }),
+  ).toBe(true);
+  expect(window.fbq?.queue).toContainEqual(["track", "PageView", {}]);
+  expect(window.fbq?.queue).toContainEqual([
+    "track",
+    "ViewContent",
+    {
+      sku: "CB301-BLACK",
+      value: 120,
+      currency: "MAD",
+      content_ids: ["CB301-BLACK"],
+      content_type: "product",
+    },
+  ]);
+});
+
+it("remembers refusal without requesting consent again or loading Meta", async () => {
+  localStorage.setItem("wzni_consent", "no");
+  const { restoreTracking } = await import("../src/components/tracking");
+  expect(restoreTracking("1643060420492632", { sku: "CB301-BLACK" })).toBe(
+    true,
+  );
+  expect(scripts).toHaveLength(0);
+});

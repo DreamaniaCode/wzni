@@ -47,7 +47,19 @@ export function track(name: string, data: Record<string, unknown> = {}) {
     window.fbq?.("track", name, pixelData);
   else window.fbq?.("trackCustom", name, pixelData);
 }
-export function consent(accepted: boolean) {
+export function restoreTracking(
+  pixel: string | undefined,
+  product: Record<string, unknown>,
+) {
+  configureTracking(pixel);
+  const saved = localStorage.getItem("wzni_consent");
+  if (saved === "yes") consent(true, product);
+  return saved === "yes" || saved === "no";
+}
+export function consent(
+  accepted: boolean,
+  product: Record<string, unknown> = {},
+) {
   localStorage.setItem("wzni_consent", accepted ? "yes" : "no");
   if (!accepted) window.fbq?.("consent", "revoke");
   else if (initialized) window.fbq?.("consent", "grant");
@@ -87,5 +99,5 @@ export function consent(accepted: boolean) {
     f("consent", "grant");
   }
   track("PageView");
-  track("ViewContent");
+  if (typeof product.sku === "string") track("ViewContent", product);
 }
