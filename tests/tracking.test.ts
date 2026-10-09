@@ -57,7 +57,7 @@ it("initializes the requested WZNI pixel and PageView only once after consent", 
   consent(true);
   consent(true);
   expect(scripts.filter((s) => s.id === "wzni-pixel")).toHaveLength(1);
-  expect(window.fbq?.queue).toContainEqual(["init", "1643060420492632"]);
+  expect(window.fbq?.queue).toContainEqual(["init", "1412522407668443"]);
   expect(
     window.fbq?.queue.filter(
       (args) => args[0] === "track" && args[1] === "PageView",
@@ -77,7 +77,7 @@ it("restores accepted consent automatically and sends a catalog-matching product
   localStorage.setItem("wzni_consent", "yes");
   const { restoreTracking } = await import("../src/components/tracking");
   expect(
-    restoreTracking("1643060420492632", { sku: "CB301-BLACK", value: 120 }),
+    restoreTracking("1412522407668443", { sku: "CB301-BLACK", value: 120 }),
   ).toBe(true);
   expect(window.fbq?.queue).toContainEqual(["track", "PageView", {}]);
   expect(window.fbq?.queue).toContainEqual([
@@ -96,7 +96,7 @@ it("restores accepted consent automatically and sends a catalog-matching product
 it("remembers refusal without requesting consent again or loading Meta", async () => {
   localStorage.setItem("wzni_consent", "no");
   const { restoreTracking } = await import("../src/components/tracking");
-  expect(restoreTracking("1643060420492632", { sku: "CB301-BLACK" })).toBe(
+  expect(restoreTracking("1412522407668443", { sku: "CB301-BLACK" })).toBe(
     true,
   );
   expect(scripts).toHaveLength(0);

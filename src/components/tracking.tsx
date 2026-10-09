@@ -78,7 +78,7 @@ export function consent(
   const pixel =
     configuredPixel ||
     process.env.NEXT_PUBLIC_META_PIXEL_ID ||
-    "1643060420492632";
+    "1412522407668443";
   if (pixel && /^\d+$/.test(pixel) && !document.getElementById("wzni-pixel")) {
     const f = ((...args: unknown[]) => {
       if (f.callMethod) f.callMethod(...args);
