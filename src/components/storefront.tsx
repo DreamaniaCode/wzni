@@ -1104,6 +1104,13 @@ export default function Storefront({
         </section>
       </main>
       <footer id="contact">
+        <button
+          className="text-link"
+          type="button"
+          onClick={() => setCookie(true)}
+        >
+          {ar ? "إعدادات الكوكيز" : "Préférences cookies"}
+        </button>
         <SocialLinks locale={locale} store={store} />
         <div className="footer-top">
           <BrandLogo href={`/${locale}`} />
